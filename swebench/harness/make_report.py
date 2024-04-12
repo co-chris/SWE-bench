@@ -12,15 +12,25 @@ from swebench.metrics.report import get_eval_report, get_resolution_status
 from swebench.metrics.log_parsers import MAP_REPO_TO_PARSER
 from swebench.metrics.getters import get_eval_refs
 from swebench.metrics.constants import (
-    INSTALL_FAIL,
-    APPLY_PATCH_FAIL,
-    APPLY_PATCH_PASS,
-    RESET_FAILED,
-    TESTS_ERROR,
-    TESTS_TIMEOUT,
+    # INSTALL_FAIL,
+    # APPLY_PATCH_FAIL,
+    # APPLY_PATCH_PASS,
+    # RESET_FAILED,
+    # TESTS_ERROR,
+    # TESTS_TIMEOUT,
     ResolvedStatus
 )
 
+
+
+# Evaluation Log Constants
+APPLY_PATCH_FAIL = ">>>>> Patch Apply Failed"
+APPLY_PATCH_PASS = ">>>>> Applied Patch"
+INSTALL_FAIL = ">>>>> Init Failed"
+INSTALL_PASS = ">>>>> Init Succeeded"
+RESET_FAILED = ">>>>> Reset Failed"
+TESTS_ERROR = ">>>>> Tests Errored"
+TESTS_TIMEOUT = ">>>>> Tests Timed Out"
 
 
 
@@ -200,4 +210,4 @@ if __name__ == "__main__":
         # for instance in hierchy_dict[status]:
         #     print (f"\t{instance}")
 
-
+print ()

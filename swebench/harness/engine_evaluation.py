@@ -123,6 +123,7 @@ def evaluate_predictions(data: dict):
                 patch_type = PatchType.PATCH_PRED
 
             # Run installation + testing script
+            # print (f'Count: {task_instance['count']}') 
             if (
                 not tcm.run_install_task(task_instance)
                 or not tcm.apply_patch(task_instance[KEY_PREDICTION], patch_type=patch_type)
@@ -157,7 +158,7 @@ def main(args):
         else:
             predictions = predictions_filtered
 
-    predictions_groups = split_instances(predictions, args.num_workers)
+    predictions_groups = [predictions] # split_instances(predictions, args.num_workers)
 
     data_groups = [
         {
@@ -168,14 +169,16 @@ def main(args):
         for g in predictions_groups
     ]
 
-    if args.num_workers == 1:
-        setup_testbed(data_groups[0])
-        return
+    print (f"setting up testbed for args {args.count}")
 
-    pool = Pool(processes=args.num_workers)
-    pool.map(setup_testbed, data_groups)
-    pool.close()
-    pool.join()
+    # if args.num_workers == 1:
+    setup_testbed(data_groups[0])
+    return
+
+    # pool = Pool(processes=args.num_workers)
+    # pool.map(setup_testbed, data_groups)
+    # pool.close()
+    # pool.join()
 
 
 if __name__ == "__main__":

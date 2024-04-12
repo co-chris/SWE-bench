@@ -55,8 +55,8 @@ class LogWrapper:
             log = f"{self.prefix} {message} \n" if self.prefix \
                 is not None else f"{message} \n"
             f.write(log)
-        if self.logger is not None:
-            self.logger.log(level, message)
+        # if self.logger is not None:
+        #     self.logger.log(level, message)
 
 
 class ExecWrapper:
@@ -92,7 +92,9 @@ class ExecWrapper:
                 if e.stderr:
                     self.logger.write(f"Error stderr: {e.stderr}", level=ERROR)
                 self.logger.write(f"Error traceback: {format_exc()}", level=ERROR)
-                raise e
+                # raise e
+            # else:
+                return e
 
 
 class TestbedContextManager:
