@@ -30,15 +30,26 @@ from datasets import load_dataset, load_from_disk
 from argparse import ArgumentParser
 import logging
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-logger = logging.getLogger(__name__)
-dotenv.load_dotenv()
-
 
 from inference.run_api import MODEL_LIMITS, parse_model_args, openai_inference, anthropic_inference
 from inference.make_datasets.utils import extract_diff
 
 from swebench.harness.colours import blue
+
+import concurrent.futures
+
+import cohere
+
+
+# logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+# logger = logging.getLogger(__name__)
+# dotenv.load_dotenv()
+
+
+logging.getLogger().setLevel(logging.WARNING)
+
+
+
 
 
 
@@ -51,6 +62,9 @@ def cohere_inference(
     max_cost,
 ):
     
+
+    
+
     
     # # im going to save a json with instance_id, model_name_or_path and model_patch
     # # then i will use that json to run the evaluation script
@@ -104,63 +118,57 @@ def cohere_inference(
 
 
     # remove instances that are too long
-    cohere_tokenize = lambda x: len(x) / 3.5
+    cohere_tokenize = lambda x: len(x) / 3.4
     test_dataset = test_dataset.filter(
         lambda x: cohere_tokenize(x["text"]) <= 120000,
         desc="Filtering",
         load_from_cache_file=False,
     )
+    print(f"Filtered to {blue(len(test_dataset))} instances due to length\n")
 
 
 
-
-    # fadsf
-
+    def get_responses(client, model_name, message):
+        response = client.chat(
+            message=message,
+            temperature=0,
+            model=model_name,
+        )
+        return response.__dict__
 
     api_key = os.environ.get("COHERE_API_KEY", None)
+    cohere_client = cohere.Client(api_key)
+    # set the client to the cohere client
+    get_responses_cohere = lambda x: get_responses(cohere_client, model_name_or_path, x)
 
-    temperature = 0 #model_args.pop("temperature", 0.2)
-    top_p = .95 # model_args.pop("top_p", 0.95 if temperature > 0 else 1)
-    print(f"Using temperature={temperature}, top_p={top_p}")
-    # basic_args = {
-    #     "model_name_or_path": model_name_or_path,
-    # }
-    # total_cost = 0
-    print(f"Filtered to {blue(len(test_dataset))} instances due to length")
+    n_datapoints = len(test_dataset)
+    batch_size = 8
+    batch = []
+    for i in tqdm(range(n_datapoints)):
 
+        batch.append(test_dataset[i])
+        if len(batch) == batch_size or i == n_datapoints-1:
+            text_batch = [datum['text'] for datum in batch]
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                responses = list(executor.map(get_responses_cohere, text_batch))
 
-    fsadf
-    # with open(output_file, "a+") as f:
-    for datum in tqdm(test_dataset, desc=f"Inference for {model_name_or_path}"):
-        # instance_id = datum["instance_id"]
-        # if instance_id in existing_ids:
-        #     continue
-        input_text = f"{datum['text']}\n\n"
+            for datum, response in zip(batch, responses):
+                completion = response['text']
+                # print (response.keys())
+                output_dict = {
+                    "instance_id": datum["instance_id"], 
+                    "model_name_or_path": model_name_or_path,
+                    # "text": datum['text'],
+                    "full_output": completion,
+                    "model_patch": extract_diff(completion),
+                }
 
+                with open(output_file, "a+") as f:
+                    f.write(json.dumps(output_dict) + "\n")
+            batch = []
 
-        response, cost = call_chat(
-            model_name_or_path,
-            input_text,
-            temperature,
-            top_p,
-        )
-        completion = response.choices[0]["message"]["content"]
-        # total_cost += cost
-        # print(f"Total Cost: {total_cost:.2f}")
+            # break
 
-        output_dict = {
-            "instance_id": datum["instance_id"], 
-            "model_name_or_path": model_name_or_path,
-            "text": input_text,
-            "full_output": completion,
-            "model_patch": extract_diff(completion),
-        }
-
-
-        print(json.dumps(output_dict), file=f, flush=True)
-        # if max_cost is not None and total_cost >= max_cost:
-        #     print(f"Reached max cost {max_cost}, exiting")
-        #     break
 
 
 
@@ -180,29 +188,31 @@ def main(
     #     )
     # if shard_id is not None and num_shards is None:
     #     logger.warning(f"Received shard_id={shard_id} but num_shards is None, ignoring")
-    model_args = parse_model_args(model_args)
-    model_nickname = model_name_or_path
-    if "checkpoint" in Path(model_name_or_path).name:
-        model_nickname = Path(model_name_or_path).parent.name
-    else:
-        model_nickname = Path(model_name_or_path).name
+    # model_args = parse_model_args(model_args)
+    
+    # if "checkpoint" in Path(model_name_or_path).name:
+    #     model_nickname = Path(model_name_or_path).parent.name
+    # else:
+    #     model_nickname = Path(model_name_or_path).name
 
     # print ('\n HEHEHEHEHEHEHEH \n')
 
-
+    model_nickname = model_name_or_path
     output_file = f"{model_nickname}__{dataset_name_or_path.split('/')[-1]}__{split}"
     # if shard_id is not None and num_shards is not None:
     #     output_file += f"__shard-{shard_id}__num_shards-{num_shards}"
     output_file = Path(output_dir, output_file + ".jsonl")
-    logger.info(f"\nWill write to\n {blue(output_file)}\n")
+    print(f"\nWill write to\n {blue(output_file)}\n")
     existing_ids = set()
     if os.path.exists(output_file):
+        # TODO: dont redo the ones already done.
+        exit()
         with open(output_file) as f:
             for line in f:
                 data = json.loads(line)
                 instance_id = data["instance_id"]
                 existing_ids.add(instance_id)
-    logger.info(f"Read {len(existing_ids)} already completed ids from {output_file}")
+    print(f"Read {len(existing_ids)} already completed ids from {output_file}")
 
     # print ('\n 111111111111111111111 \n')
 
@@ -251,7 +261,7 @@ def main(
     #     openai_inference(**inference_args)
     # else:
     #     raise ValueError(f"Invalid model name or path {model_name_or_path}")
-    logger.info(f"Done!")
+    print(f"Done!")
 
 
 

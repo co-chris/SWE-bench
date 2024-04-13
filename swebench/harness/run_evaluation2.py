@@ -207,6 +207,7 @@ def main(
 
     # Run evaluation on each model/repo
     num_processes = min(len(eval_args), num_processes) if num_processes > 0 else len(eval_args)
+    num_processes = min(num_processes, os.cpu_count()-4)
 
     print ("########################################")
     print (f"# of eval_args: {blue(len(eval_args))}")
