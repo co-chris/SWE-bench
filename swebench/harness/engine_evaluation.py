@@ -87,11 +87,13 @@ def evaluate_predictions(data: dict):
             + setup_testbed args
     """
     data_dict = DotDict(data)
-    for task_instance in tqdm(
-        data_dict.task_instances,
-        disable=data_dict.verbose,
-        desc=f"Evaluating predictions for {data_dict.log_dir}"
-    ):
+    # for task_instance in tqdm(
+    #     data_dict.task_instances,
+    #     disable=data_dict.verbose,
+    #     desc=f"Evaluating predictions for {data_dict.log_dir}"
+    # ):
+    # No tqdm
+    for task_instance in data_dict.task_instances:
         with TaskEnvContextManager(
             task_instance,
             data_dict.testbed,

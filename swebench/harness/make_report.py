@@ -47,7 +47,15 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir):
 
 
     # Get predictions
-    predictions = json.load(open(predictions_path))
+    if predictions_path.endswith(".json"):
+        predictions = json.load(open(predictions_path))
+    else:
+        # load jsonl
+        predictions = []
+        with open(predictions_path) as f:
+            for line in f:
+                predictions.append(json.loads(line))
+
     
     keys = ["model_patch_does_not_exist", "model_patch_exists", "with_logs", 
             "install_fail", 
@@ -165,6 +173,12 @@ if __name__ == "__main__":
     predictions_path = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/provided_patch.json"
     swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
     log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
+
+    # # python -m swebench.harness.run_evaluation2 --predictions_path /home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r__SWE-bench_oracle__test.jsonl --swe_bench_tasks princeton-nlp/SWE-bench_oracle --log_dir /home/chris_cohere_ai/SWE-bench-stuff/log_dir --testbed /home/chris_cohere_ai/SWE-bench-stuff/testbed --timeout=60 --skip_existing
+    # model = "command-r"
+    # predictions_path = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r__SWE-bench_oracle__test.jsonl"
+    # swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
+    # log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
 
 
 

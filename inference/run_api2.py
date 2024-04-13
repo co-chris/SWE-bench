@@ -288,7 +288,8 @@ if __name__ == "__main__":
     
     
     output_dir = "/home/chris_cohere_ai/SWE-bench-stuff/outputs"
-    model_name = "command-r"
+    # model_name = "command-r"
+    model_name = "command-r-plus"
     
     main(dataset_name_or_path,
             "test",
