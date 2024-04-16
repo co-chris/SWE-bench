@@ -554,9 +554,7 @@ MAP_REPO_TO_INSTALL = {}
 TEST_PYTEST = "pytest --no-header -rA --tb=no -p no:cacheprovider"
 MAP_REPO_TO_TEST_FRAMEWORK = {
     "astropy/astropy": TEST_PYTEST,
-    "dbt-labs/dbt-core": TEST_PYTEST,
     "django/django": "./tests/runtests.py --verbosity 2",
-    "huggingface/transformers": TEST_PYTEST,
     "marshmallow-code/marshmallow": TEST_PYTEST,
     "matplotlib/matplotlib": TEST_PYTEST,
     "mwaskom/seaborn": "pytest --no-header -rA",
@@ -578,7 +576,6 @@ MAP_REPO_TO_TEST_FRAMEWORK = {
 
 # Constants - Task Instance Requirements File Paths
 MAP_REPO_TO_REQS_PATHS = {
-    "dbt-labs/dbt-core": ["dev-requirements.txt", "dev_requirements.txt"],
     "django/django": ["tests/requirements/py3.txt"],
     "matplotlib/matplotlib": ["requirements/dev/dev-requirements.txt", "requirements/testing/travis_all.txt"],
     "pallets/flask": ["requirements/dev.txt"],
@@ -619,6 +616,9 @@ class PatchType(Enum):
     PATCH_PRED_MINIMAL = "pred_minimal"
     PATCH_PRED_MINIMAL_TRY = "pred_minimal_try"
     PATCH_TEST = "test"
+
+    def __str__(self):
+        return self.value
 
 # Constants - Miscellaneous
 NON_TEST_EXTS = [".json", ".png", "csv", ".txt", ".md", ".jpg", ".jpeg", ".pkl", ".yml", ".yaml", ".toml"]
