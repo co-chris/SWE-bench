@@ -169,10 +169,10 @@ if __name__ == "__main__":
     # log_dir = f"/home/chris_cohere_ai/SWE-bench-stuff/log_dir/{model}"
 
 
-    model = "their_provided_patch"
-    predictions_path = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/provided_patch.json"
-    swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
-    log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
+    # model = "their_provided_patch"
+    # predictions_path = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/provided_patch.json"
+    # swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
+    # log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
 
     # # python -m swebench.harness.run_evaluation2 --predictions_path /home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r__SWE-bench_oracle__test.jsonl --swe_bench_tasks princeton-nlp/SWE-bench_oracle --log_dir /home/chris_cohere_ai/SWE-bench-stuff/log_dir --testbed /home/chris_cohere_ai/SWE-bench-stuff/testbed --timeout=60 --skip_existing
     # model = "command-r"
@@ -180,6 +180,10 @@ if __name__ == "__main__":
     # swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
     # log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
 
+    model = "command-r-plus"
+    predictions_path = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r-plus__SWE-bench_oracle__test.jsonl"
+    swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
+    log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
 
 
     report = get_model_report2(model, predictions_path, swe_bench_tasks, log_dir)
