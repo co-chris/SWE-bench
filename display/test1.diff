@@ -1,0 +1,9 @@
+--- a/django/contrib/messages/storage/base.py
++++ b/django/contrib/messages/storage/base.py
+@@ -11,6 +11,7 @@
+ from django.contrib.messages.constants import DEFAULT_TAGS, DEBUG, INFO, SUCCESS, WARNING, ERROR
+ from django.core.exceptions import ImproperlyConfigured
+ from django.utils.functional import keep_lazy_text, Promise
+-from django.utils.translation import gettext as _
++from django.utils.translation import gettext_active
+

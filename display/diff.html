@@ -1,0 +1,25 @@
+<html>
+<head>
+    <style>
+        .gd {
+            background-color: #f8cbad;
+        }
+        .gi {
+            background-color: #d9ead3;
+        }
+        .gu {
+            background-color: #50524f;
+        }
+
+    </style>
+</head>
+<body><div class="highlight"><pre><span></span><span class="gd">--- a/django/contrib/messages/storage/base.py</span>
+<span class="gi">+++ b/django/contrib/messages/storage/base.py</span>
+<span class="gu">@@ -11,6 +11,7 @@</span>
+<span class="w"> </span>from django.contrib.messages.constants import DEFAULT_TAGS, DEBUG, INFO, SUCCESS, WARNING, ERROR
+<span class="w"> </span>from django.core.exceptions import ImproperlyConfigured
+<span class="w"> </span>from django.utils.functional import keep_lazy_text, Promise
+<span class="gd">-from django.utils.translation import gettext as _</span>
+<span class="gi">+from django.utils.translation import gettext_active</span>
+</pre></div>
+</body></html>
