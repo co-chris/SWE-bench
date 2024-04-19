@@ -4,7 +4,7 @@ from multiprocessing import Pool, cpu_count
 from swebench.harness.constants import PatchType
 from swebench.harness.context_manager import TaskEnvContextManager, TestbedContextManager
 from swebench.harness.utils import get_instances, split_instances, DotDict
-
+from swebench.harness.colours import blue
 
 SKIP_INSTANCES = {"pytest-dev/pytest": ["6387", "7956", "3805"]}
 
@@ -49,11 +49,12 @@ def verify_task_instances(data: dict):
             task_instance,
             data_dict.testbed,
             data_dict.venv,
-            data_dict.log_dir,
+            # data_dict.log_dir,
             data_dict.conda_path,
             verbose=data_dict.verbose,
             timeout=data_dict.timeout,
-            log_suffix=data_dict.log_suffix,
+            # log_suffix=data_dict.log_suffix,
+            log_file=data_dict.log_file,
         ) as tcm:
             if (
                 task_instance["repo"] in SKIP_INSTANCES
@@ -100,8 +101,11 @@ def setup_testbed(data: dict):
     ) as tcm:
         distributed_task_list = tcm.get_distributed_tasks()
         for task_list in distributed_task_list:
+            # better print
+            task_list_testbed = task_list["testbed"].split("/", 6)[-1]
             print(
-                f"{task_list['testbed']}: {len(task_list['task_instances'])} instances"
+                # f"{task_list['testbed']}: {len(task_list['task_instances'])} instances"
+                f"{task_list_testbed}: {blue(len(task_list['task_instances']))} instances"
             )
 
         if len(distributed_task_list) == 1:

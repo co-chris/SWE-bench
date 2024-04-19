@@ -17,11 +17,13 @@ from swebench.harness.constants import (
     KEY_MODEL,
     KEY_PREDICTION,
 )
-from swebench.harness.engine_evaluation import main as eval_engine
-from swebench.harness.utils import get_instances
+# from swebench.harness.engine_evaluation import main as eval_engine
+from swebench.harness.utils import get_instances, validate_predictions, deterministic_hash
 from swebench.metrics.getters import get_eval_refs
 
 from swebench.harness.colours import blue
+from swebench.harness.engine_evaluation import evaluate_predictions
+from swebench.harness.engine_validation import setup_testbed
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -29,34 +31,6 @@ logging.basicConfig(
 logger = logging.getLogger("run_evaluation")
 
 
-def deterministic_hash(input_string: str, length: int = None):
-    input_bytes = input_string.encode('utf-8')
-    sha256_hash = hashlib.sha256(input_bytes)
-    hex_digest = sha256_hash.hexdigest()
-    if length is None:
-        return hex_digest
-    return hex_digest[:length]
-
-
-def validate_predictions(predictions_path, tasks_ids):
-    # Check that predictions file exists
-    if not any([predictions_path.endswith(x) for x in [".json", ".jsonl"]]):
-        raise ValueError("Predictions path must be .json or .jsonl file")
-    predictions = get_instances(predictions_path)
-    not_in_tasks = []
-    # Check that predictions are correctly formatted
-    for pred in predictions:
-        if any([x not in pred for x in [KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION]]):
-            raise ValueError(f"Every prediction must have {KEY_INSTANCE_ID}, {KEY_MODEL}, and {KEY_PREDICTION} fields")
-        if pred[KEY_INSTANCE_ID] not in tasks_ids:
-            not_in_tasks.append(pred[KEY_INSTANCE_ID])
-    # Check that instance IDs specified by predictions exist
-    if len(not_in_tasks) > 0:
-        logger.warning(
-            "Predictions for the following instance_ids were not "
-            + "found in the tasks file and will not be considered: "
-            + ", ".join(not_in_tasks)
-        )
 
 
 def main(
@@ -94,6 +68,8 @@ def main(
     
     tasks = list(get_eval_refs(swe_bench_tasks).values())
 
+    # log_suffix = log_suffix if log_suffix is not None else ""
+
     # Verify arguments are formatted correctly
     if not isinstance(tasks, list):
         raise ValueError(f"{swe_bench_tasks} must contain an array of tasks")
@@ -117,12 +93,19 @@ def main(
     predictions = map_model_to_predictions[model_name]
     n_all_preds = len(predictions)
 
+    if log_suffix is None:
+        model_log_dir = os.path.join(log_dir, model_name)
+    else:
+        model_log_dir = os.path.join(log_dir, model_name+log_suffix)
+
     # remove ones that are already done
     if skip_existing:
         predictions_todo = []
         for p in predictions:
-            log_file = os.path.join(log_dir, p[KEY_MODEL], f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.eval.log")
+            log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.log")
             if not os.path.exists(log_file):
+                # add log_file to p
+                p["log_file"] = log_file
                 predictions_todo.append(p)
         predictions = predictions_todo
 
@@ -152,48 +135,68 @@ def main(
 
 
     eval_args = []
-    temp_dirs = []
+    # temp_dirs = []
     count = 0
+    testbed_model_dir = os.path.join(testbed, model_name)
     # For each model/repo/version, create testbed folder and save predictions
     # And prepare args for evaluation
     for repo in map_repo_version_to_predictions:
         for version in map_repo_version_to_predictions[repo]:
+
+            prediction_list = map_repo_version_to_predictions[repo][version]
+
+
             # Create model/repo/version specific testbed folder
-            testbed_model_name = model
-            if len(testbed_model_name) > 50:
-                # Hash model name for temp_dir path if too long
-                # Issue: https://github.com/conda/conda/issues/12250
-                testbed_model_name = deterministic_hash(testbed_model_name, 10)
             testbed_model_repo_version_dir = os.path.join(
-                testbed, testbed_model_name, repo.rsplit('__', 1)[-1], version)
+                testbed_model_dir, repo.rsplit('__', 1)[-1], version)
             os.makedirs(testbed_model_repo_version_dir, exist_ok=True)
 
-            # Create predictions file for model/repo/version
+            # Create predictions file for model/repo/version in testbed folder
             file_name = f"{model}_{repo}_{version}_{predictions_path.split('/')[-1]}"
-            file_path = os.path.join(testbed_model_repo_version_dir, file_name)
-            if file_path.endswith(".jsonl"):
-                file_path = file_path[:-1]
+            testbed_file = os.path.join(testbed_model_repo_version_dir, file_name)
+            if testbed_file.endswith(".jsonl"): # make it .json
+                testbed_file = testbed_file[:-1]
+            # i dont see why it needs to copy the predictions..wait its not. . .wiat it is
+            # well ive added log file to preds, so i guess that is why
 
-            # Create evaluation args
-            args = argparse.Namespace()
-            args.log_dir = os.path.join(log_dir, model)
-            args.log_suffix = log_suffix
-            args.num_workers = 1
-            args.predictions_path = file_path
-            args.skip_existing = skip_existing
-            args.temp_dir = testbed_model_repo_version_dir
-            args.timeout = timeout
-            args.verbose = verbose
-            args.conda_link = conda_link
-            args.count = count
+            # # Create evaluation args
+            # args = argparse.Namespace()
+            # # args.log_dir = os.path.join(log_dir, model)
+            # # args.log_suffix = log_suffix
+            # # args.log_file = todo
+            # # args.num_workers = 1
+            # args.predictions_path = testbed_file
+            # # args.predictions_list = prediction_list
+            # # args.skip_existing = skip_existing
+            # args.temp_dir = testbed_model_repo_version_dir
+            # args.timeout = timeout
+            # args.verbose = verbose
+            # args.conda_link = conda_link
+            # args.count = count
+
+            args = {
+                "task_instances": prediction_list,
+                "predictions_path": testbed_file,
+                "temp_dir": testbed_model_repo_version_dir,
+                "log_dir": model_log_dir,
+                # "log_file": 
+                "timeout": timeout,
+                "verbose": verbose,
+                "conda_link": conda_link,
+                "count": count,
+                "func": evaluate_predictions,
+            }
+
+
+
             count += 1
 
             # Save predictions to file
-            with open(file_path, "w") as f:
-                json.dump(map_repo_version_to_predictions[repo][version], f, indent=4)
+            with open(testbed_file, "w") as f:
+                json.dump(prediction_list, f, indent=4)
 
             eval_args.append(args)
-            temp_dirs.append(testbed_model_repo_version_dir)
+            # temp_dirs.append(testbed_model_repo_version_dir)
 
 
 
@@ -215,22 +218,38 @@ def main(
     print ("########################################")
 
 
+
+    # task = {
+    #     "task_instances": predictions,
+    #     "func": evaluate_predictions,
+    #     **vars(args),
+    # }
+
+    # if args.num_workers == 1:
+    # setup_testbed(task)
+
     try:
-        if num_processes == 1:
-            for args in eval_args:
-                eval_engine(args)
-        else:
-            pool = Pool(processes=num_processes)
-            pool.map(eval_engine, eval_args)
-            pool.close()
-            pool.join()
+        # if num_processes == 1:
+        #     for args in eval_args:
+        #         eval_engine(args)
+        # else:
+        pool = Pool(processes=num_processes)
+        # pool.map(eval_engine, eval_args)
+        pool.map(setup_testbed, eval_args)
+        pool.close()
+        # we do pool.join() here to wait for all processes to finish? 
+        pool.join()
     finally:
-        # Clean up
-        for temp_dir in temp_dirs:
-            # Kill all processes that are using the temp directory
-            subprocess.run(f"lsof +D {temp_dir} | awk 'NR>1 {{print $2}}' | xargs kill", shell=True, capture_output=True)
-            # Remove temp directory
-            shutil.rmtree(temp_dir, ignore_errors=True)
+        # # Clean up
+        # for temp_dir in temp_dirs:
+        #     # Kill all processes that are using the temp directory
+        #     subprocess.run(f"lsof +D {temp_dir} | awk 'NR>1 {{print $2}}' | xargs kill", shell=True, capture_output=True)
+        #     # Remove temp directory
+        #     shutil.rmtree(temp_dir, ignore_errors=True)
+
+        # Delete testbed_model_dir
+        shutil.rmtree(testbed_model_dir, ignore_errors=True)
+
 
 
 if __name__ == "__main__":

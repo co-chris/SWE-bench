@@ -97,6 +97,18 @@ class ExecWrapper:
                 return e
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 class TestbedContextManager:
     def __init__(
         self,
@@ -459,18 +471,39 @@ class TestbedContextManager:
 logger_taskenv = logging.getLogger("taskenv")
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class TaskEnvContextManager:
     def __init__(
         self,
         instance: dict,
         testbed: str,
         venv: str,
-        log_dir: str,
+        # log_file: str,
+        # log_dir: str,
         conda_path: str,
         verbose: bool = False,
         timeout: int = None,
         is_eval: bool = False,
-        log_suffix: str = None,
+        # log_suffix: str = None,
+        
     ):
         """
         Sets up execution context for a single task instance
@@ -497,19 +530,21 @@ class TaskEnvContextManager:
         self.testbed_name = testbed.split("/")[-1]
         self.venv = venv
 
-        # Log file naming
-        log_file_name = (
-            f"{instance[KEY_INSTANCE_ID]}.{instance[KEY_MODEL]}.eval.log"
-            if self.is_eval
-            else f"{instance[KEY_INSTANCE_ID]}.log"
-        )
-        if log_suffix is not None:
-            log_file_name = (
-                f"{instance[KEY_INSTANCE_ID]}.{instance[KEY_MODEL]}.{log_suffix}.eval.log"
-                if self.is_eval
-                else f"{instance[KEY_INSTANCE_ID]}.{log_suffix}.log"
-            )
-        self.log_file = os.path.join(log_dir, log_file_name)
+        # # Log file naming
+        # log_file_name = (
+        #     f"{instance[KEY_INSTANCE_ID]}.{instance[KEY_MODEL]}.eval.log"
+        #     if self.is_eval
+        #     else f"{instance[KEY_INSTANCE_ID]}.log"
+        # )
+        # if log_suffix is not None:
+        #     log_file_name = (
+        #         f"{instance[KEY_INSTANCE_ID]}.{instance[KEY_MODEL]}.{log_suffix}.eval.log"
+        #         if self.is_eval
+        #         else f"{instance[KEY_INSTANCE_ID]}.{log_suffix}.log"
+        #     )
+        
+        # self.log_file = os.path.join(log_dir, log_file_name)
+        self.log_file = instance["log_file"] 
         self.log = LogWrapper(
             self.log_file, logger=logger_taskenv,
             prefix=f"[{self.testbed_name}] [{self.instance[KEY_INSTANCE_ID]}]")

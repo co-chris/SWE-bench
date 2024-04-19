@@ -23,17 +23,6 @@ from swebench.metrics.constants import (
 
 
 
-# Evaluation Log Constants
-APPLY_PATCH_FAIL = ">>>>> Patch Apply Failed"
-APPLY_PATCH_PASS = ">>>>> Applied Patch"
-INSTALL_FAIL = ">>>>> Init Failed"
-INSTALL_PASS = ">>>>> Init Succeeded"
-RESET_FAILED = ">>>>> Reset Failed"
-TESTS_ERROR = ">>>>> Tests Errored"
-TESTS_TIMEOUT = ">>>>> Tests Timed Out"
-
-
-
 
 
 
@@ -41,7 +30,22 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir):
     """
     """
 
+
+    # Evaluation Log Constants
+    APPLY_PATCH_FAIL = ">>>>> Patch Apply Failed"
+    APPLY_PATCH_PASS = ">>>>> Applied Patch"
+    INSTALL_FAIL = ">>>>> Init Failed"
+    INSTALL_PASS = ">>>>> Init Succeeded"
+    RESET_FAILED = ">>>>> Reset Failed"
+    TESTS_ERROR = ">>>>> Tests Errored"
+    TESTS_TIMEOUT = ">>>>> Tests Timed Out"
+
+
+
+
     eval_refs = get_eval_refs(swe_bench_tasks)
+    print (eval_refs.keys())
+    fdsafa
     for k, v in eval_refs.items():
         eval_refs[k] = {key: v[key] for key in ["instance_id", "FAIL_TO_PASS", "PASS_TO_PASS"]}
 

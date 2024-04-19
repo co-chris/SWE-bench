@@ -222,7 +222,12 @@ def main(
         print ('\n loading dataset')
         dataset = load_dataset(dataset_name_or_path)
 
+        # save dataset so that we can load it faster next time
+
+
     print ('dataset loaded \n')
+
+    fadasf
 
     if not split in dataset:
         raise ValueError(f"Invalid split {split} for dataset {dataset_name_or_path}")

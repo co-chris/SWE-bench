@@ -19,62 +19,6 @@ from swebench.harness.utils import (
 from tqdm.auto import tqdm
 
 
-def overwrite_ablation(tcm: TaskEnvContextManager, task_instance: dict):
-    """
-    Code for running ablation experiment to compare generating full files vs patches
-
-    Args:
-        tcm: TaskEnvContextManager
-        task_instance: Dict containing task instance
-    """
-    # if full output is none, write to log and skip altogether
-    if 'full_output' not in task_instance:
-        print(f'[{task_instance[KEY_INSTANCE_ID]}] No `full_output` field, skipping')
-        with open(tcm.log_file, 'a') as f_log:
-            f_log.write(f'{APPLY_PATCH_FAIL}; No `full_output` field\n')
-        return
-    if task_instance['full_output'] is None:
-        print(f'[{task_instance[KEY_INSTANCE_ID]}] `full_output` is None, skipping')
-        with open(tcm.log_file, 'a') as f_log:
-            f_log.write(f'{APPLY_PATCH_FAIL}; `full_output` is None\n')
-        return
-
-    # Attempt to set up environment with task + apply test patch
-    if not tcm.reset_task_env(task_instance):
-        return
-    
-    filename_pat = re.compile(r'\[start of ([\w\.\-\/]+)\]\n(.+?)\n\[end of \1\]', re.DOTALL)
-    # Run installation
-    if (
-        not tcm.run_install_task(task_instance)
-        or not tcm.apply_patch(task_instance["test_patch"], patch_type=PatchType.PATCH_TEST.value)
-    ):
-        return
-    
-    # overwrite files
-    for filename, contents in filename_pat.findall(task_instance['full_output']):
-        correct_filename = './' + filename.lstrip('/')
-        correct_filename = os.path.abspath(correct_filename)
-        if not correct_filename.startswith(os.getcwd()):
-            print(f"[{task_instance[KEY_INSTANCE_ID]}] Generation attempted to create file outside of working directory")
-            return
-
-        # if os.path.exists(correct_filename):
-        if not os.path.exists(correct_filename):
-            folder = '/'.join(correct_filename.split('/')[:-1])
-            if not os.path.exists(folder):
-                os.makedirs(folder)
-        with open(correct_filename, 'w') as f:
-            f.write(contents)
-            with open(tcm.log_file, 'a') as f_log:
-                f_log.write(f'Overwrote {correct_filename}\n')
-    
-    # run testing script
-    if not tcm.run_tests_task(task_instance):
-        return
-    
-    return
-
 
 def evaluate_predictions(data: dict):
     """
@@ -92,18 +36,21 @@ def evaluate_predictions(data: dict):
     #     disable=data_dict.verbose,
     #     desc=f"Evaluating predictions for {data_dict.log_dir}"
     # ):
+    # print (data_dict.log_file)
+    # fasdf
     # No tqdm
     for task_instance in data_dict.task_instances:
         with TaskEnvContextManager(
             task_instance,
             data_dict.testbed,
             data_dict.venv,
-            data_dict.log_dir,
+            # data_dict.log_dir,
+            # data_dict.log_file,
             data_dict.conda_path,
             verbose=data_dict.verbose,
             timeout=data_dict.timeout,
             is_eval=True,
-            log_suffix=data_dict.log_suffix,
+            # log_suffix=data_dict.log_suffix,
         ) as tcm:
             # Attempt to set up environment with task instance
             if not tcm.reset_task_env(task_instance):
@@ -145,41 +92,49 @@ def main(args):
     Splits predictions into multiple groups if num_workers > 1. Each group is
     then evaluated in parallel.
     """
-    if args.num_workers is None:
-        args.num_workers = cpu_count()
+    # if args.num_workers is None:
+    #     args.num_workers = cpu_count()
 
     predictions = get_instances(args.predictions_path)
 
-    # Remove predictions that have already been evaluated
-    if args.skip_existing:
-        predictions_filtered = []
-        for p in predictions:
-            log_file_name = f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.eval.log"
-            if args.log_suffix is not None:
-                log_file_name = f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.{args.log_suffix}.eval.log"
-            path_log = os.path.join(args.log_dir, log_file_name)
-            if not os.path.exists(path_log):
-                predictions_filtered.append(p)
-        if len(predictions_filtered) == 0:
-            return
-        else:
-            predictions = predictions_filtered
+    # # Remove predictions that have already been evaluated
+    # if args.skip_existing:
+    #     predictions_filtered = []
+    #     for p in predictions:
+    #         log_file_name = f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.eval.log"
+    #         if args.log_suffix is not None:
+    #             log_file_name = f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.{args.log_suffix}.eval.log"
+    #         path_log = os.path.join(args.log_dir, log_file_name)
+    #         print (path_log)
+    #         fasdfd
+    #         if not os.path.exists(path_log):
+    #             predictions_filtered.append(p)
+    #     if len(predictions_filtered) == 0:
+    #         return
+    #     else:
+    #         predictions = predictions_filtered
 
-    predictions_groups = [predictions] # split_instances(predictions, args.num_workers)
+    # predictions_groups = [predictions] # split_instances(predictions, args.num_workers)
 
-    data_groups = [
-        {
-            "task_instances": g,
-            "func": evaluate_predictions,
-            **vars(args),
-        }
-        for g in predictions_groups
-    ]
+    # data_groups = [
+    #     {
+    #         "task_instances": g,
+    #         "func": evaluate_predictions,
+    #         **vars(args),
+    #     }
+    #     for g in predictions_groups
+    # ]
 
-    print (f"setting up testbed for args {args.count}")
+    # print (f"setting up testbed for args {args.count}")
+
+    task = {
+        "task_instances": predictions,
+        "func": evaluate_predictions,
+        **vars(args),
+    }
 
     # if args.num_workers == 1:
-    setup_testbed(data_groups[0])
+    setup_testbed(task)
     return
 
     # pool = Pool(processes=args.num_workers)

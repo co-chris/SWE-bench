@@ -14,8 +14,44 @@ from swebench.harness.constants import (
     NON_TEST_EXTS,
 )
 
+from swebench.harness.constants import (
+    KEY_INSTANCE_ID,
+    KEY_MODEL,
+    KEY_PREDICTION,
+)
 
 load_dotenv()
+
+
+
+def deterministic_hash(input_string: str, length: int = None):
+    input_bytes = input_string.encode('utf-8')
+    sha256_hash = hashlib.sha256(input_bytes)
+    hex_digest = sha256_hash.hexdigest()
+    if length is None:
+        return hex_digest
+    return hex_digest[:length]
+
+
+def validate_predictions(predictions_path, tasks_ids):
+    # Check that predictions file exists
+    if not any([predictions_path.endswith(x) for x in [".json", ".jsonl"]]):
+        raise ValueError("Predictions path must be .json or .jsonl file")
+    predictions = get_instances(predictions_path)
+    not_in_tasks = []
+    # Check that predictions are correctly formatted
+    for pred in predictions:
+        if any([x not in pred for x in [KEY_INSTANCE_ID, KEY_MODEL, KEY_PREDICTION]]):
+            raise ValueError(f"Every prediction must have {KEY_INSTANCE_ID}, {KEY_MODEL}, and {KEY_PREDICTION} fields")
+        if pred[KEY_INSTANCE_ID] not in tasks_ids:
+            not_in_tasks.append(pred[KEY_INSTANCE_ID])
+    # # Check that instance IDs specified by predictions exist
+    # if len(not_in_tasks) > 0:
+    #     logger.warning(
+    #         "Predictions for the following instance_ids were not "
+    #         + "found in the tasks file and will not be considered: "
+    #         + ", ".join(not_in_tasks)
+    #     )
 
 
 def get_conda_env_names(conda_source: str, env: dict = None) -> list:
