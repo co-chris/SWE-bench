@@ -179,7 +179,6 @@ def main(
                 "predictions_path": testbed_file,
                 "temp_dir": testbed_model_repo_version_dir,
                 "log_dir": model_log_dir,
-                # "log_file": 
                 "timeout": timeout,
                 "verbose": verbose,
                 "conda_link": conda_link,

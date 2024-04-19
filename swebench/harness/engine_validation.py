@@ -1,10 +1,11 @@
 import argparse, os
+import time
 
 from multiprocessing import Pool, cpu_count
 from swebench.harness.constants import PatchType
 from swebench.harness.context_manager import TaskEnvContextManager, TestbedContextManager
 from swebench.harness.utils import get_instances, split_instances, DotDict
-from swebench.harness.colours import blue
+from swebench.harness.colours import blue, green
 
 SKIP_INSTANCES = {"pytest-dev/pytest": ["6387", "7956", "3805"]}
 
@@ -112,10 +113,17 @@ def setup_testbed(data: dict):
             data_dict.func(distributed_task_list[0])
             return
 
+        start_time = time.time()
         pool = Pool(processes=len(distributed_task_list))
         pool.map(data_dict.func, distributed_task_list)
         pool.close()
         pool.join()
+        total_time = time.time() - start_time
+
+        for task_list in distributed_task_list:
+            task_list_testbed = task_list["testbed"].split("/", 6)[-1]
+            print (f"{task_list_testbed}: completed {green(len(task_list['task_instances']))} in {total_time:.2f} secs")
+            
 
 
 def main(args):

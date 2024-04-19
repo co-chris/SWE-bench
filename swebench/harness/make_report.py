@@ -7,6 +7,7 @@ run eval: python -m swebench.harness.run_evaluation --predictions_path /home/chr
 
 import os
 import json
+import argparse
 
 from swebench.metrics.report import get_eval_report, get_resolution_status
 from swebench.metrics.log_parsers import MAP_REPO_TO_PARSER
@@ -26,7 +27,7 @@ from swebench.metrics.constants import (
 
 
 
-def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir):
+def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suffix):
     """
     """
 
@@ -44,8 +45,8 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir):
 
 
     eval_refs = get_eval_refs(swe_bench_tasks)
-    print (eval_refs.keys())
-    fdsafa
+    # print (eval_refs.keys())
+    # fdsafa
     for k, v in eval_refs.items():
         eval_refs[k] = {key: v[key] for key in ["instance_id", "FAIL_TO_PASS", "PASS_TO_PASS"]}
 
@@ -89,7 +90,13 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir):
         report_map["model_patch_exists"].append(instance_id)
 
         # Get log file
-        log_path = os.path.join(log_dir, f"{model}/{instance_id}.{model}.eval.log")
+        # log_path = os.path.join(log_dir, f"{model}/{instance_id}.{model}.eval.log")
+        
+        
+        # v2
+        log_path = os.path.join(log_dir, model+log_suffix, f"{instance_id}.{model}.log")
+
+
         # print (log_path)
         # fasdf
         if not os.path.exists(log_path):
@@ -184,13 +191,26 @@ if __name__ == "__main__":
     # swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
     # log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
 
-    model = "command-r-plus"
-    predictions_path = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r-plus__SWE-bench_oracle__test.jsonl"
-    swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
-    log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
+    # model = "command-r-plus"
+    # predictions_path = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r-plus__SWE-bench_oracle__test.jsonl"
+    # swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
+    # log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
 
+    # model = "their_provided_patch"
+    # log_suffix = '_2'
+    # predictions_path = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/provided_patch.json"
+    # swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
+    # log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
 
-    report = get_model_report2(model, predictions_path, swe_bench_tasks, log_dir)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--model", type=str, help="Model name", required=True)
+    parser.add_argument("--predictions_path", type=str, help="Path to predictions file (must be .json)", required=True)
+    parser.add_argument("--log_dir", type=str, help="Path to log directory", required=True)
+    parser.add_argument("--swe_bench_tasks", type=str, help="Path to dataset file or HF datasets name", required=True)
+    parser.add_argument("--log_suffix", type=str, help="(Optional) Suffix to append to log file names", default=None)
+    args = parser.parse_args()
+
+    report = get_model_report2(args.model, args.predictions_path, args.swe_bench_tasks, args.log_dir, args.log_suffix)
     keys = list(report.keys())
     for k in keys:
         print (f"{k}: {len(report[k])}")
