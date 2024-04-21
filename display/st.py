@@ -179,7 +179,9 @@ output_dir = "/home/chris_cohere_ai/SWE-bench-stuff/outputs"
 files = os.listdir(output_dir)
 files = [f for f in files if dataset_name in f]
 models = [f.split('__')[0] for f in files]
-# print (files)
+
+files.append("provided_patch.json")
+models.append("provided_patch")
 
 
 
@@ -187,15 +189,7 @@ models = [f.split('__')[0] for f in files]
 
 
 
-
-
-def get_model_report3(model, instance_id): #, predictions_path, swe_bench_tasks, ):
-    """
-    """
-    
-    # Get log file
-    log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
-    log_path = os.path.join(log_dir, f"{model}/{instance_id}.{model}.eval.log")
+def get_model_report3(log_path): #, predictions_path, swe_bench_tasks, ):
 
     # Evaluation Log Constants
     APPLY_PATCH_FAIL = ">>>>> Patch Apply Failed"
@@ -271,20 +265,59 @@ with cols[1]:
     model = st.selectbox("Select the model", models)
     # get the model output
     model_output_path = os.path.join(output_dir, files[models.index(model)])
+    # print (model_output_path)
     predictions = get_instances(model_output_path)
+
+
+
+
+    # find suffixes
+    log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
+    log_dirs_models = os.listdir(log_dir)
+    log_dirs_models = [f for f in log_dirs_models if model in f]
+    # print (log_dirs_models)
+
+    if len(log_dirs_models) > 1 and 'command-r' not in log_dirs_models:
+        model_version = st.selectbox("Select the version", log_dirs_models)
+    else:
+        model_version = model
+
+
+    log_path = os.path.join(log_dir, f"{model_version}/{instance_id}.{model_version}.eval.log")
+    # check if it exists
+    if not os.path.exists(log_path):
+        # v2
+        log_path = os.path.join(log_dir, model_version, f"{instance_id}.{model}.log")
+
+        if "provided_patch" in model_version:
+            log_path = os.path.join(log_dir, model_version, f"{instance_id}.their_provided_patch.log")
+
+
+    # print (log_path)
+
+
+
+
+
+
     print (f"Number of predictions: {len(predictions)}")
     st.text(f"{len(predictions)}/{total_instances} model generated patches")
 
     # # get the model output for the selected instance_id
     # print (predictions[0].keys())
+    prediction = None
     for pred in predictions:
         if pred["instance_id"] == instance_id:
             prediction = pred
             break
+    if prediction is None:
+        st.text("No prediction found")
+        st.stop()
 
-    with st.expander("Full Output", expanded=False):
-        # st.markdown(f"{prediction['full_output']}", unsafe_allow_html=True)
-        st.code(f"{prediction['full_output']}")
+    if "full_output" in prediction:
+        with st.expander("Full Output", expanded=False):
+            # st.markdown(f"{prediction['full_output']}", unsafe_allow_html=True)
+            st.code(f"{prediction['full_output']}")
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<h3>Model Generated Patch</h3>", unsafe_allow_html=True)
@@ -315,8 +348,8 @@ with cols[1]:
     # st.markdown(f"Number of PASS_TO_PASS tests: <span style='color:green'>{len(tests_PASS_TO_PASS)}</span>", unsafe_allow_html=True)
     # st.markdown(f"Number of FAIL_TO_PASS tests: <span style='color:green'>{len(tests_FAIL_TO_PASS)}</span>", unsafe_allow_html=True)
 
-    log_content, result = get_model_report3(model=model,
-                                    instance_id=instance_id,) #
+
+    log_content, result = get_model_report3(log_path=log_path)
 
 
 
@@ -358,16 +391,6 @@ with cols[1]:
     pass_text = "<span style='color:green'>PASSED</span>"
     fail_text = "<span style='color:red'>FAILED</span>"
 
-    # st.text(f"PASS_TO_PASS: {pass_to_pass_success}/{pass_to_pass_total}")
-    # for test in report["PASS_TO_PASS"]["success"]:
-    #     st.markdown(f"<p>{pass_text} {test}</p>", unsafe_allow_html=True)
-    # for test in report["PASS_TO_PASS"]["failure"]:
-    #     st.markdown(f"<p>{fail_text} {test}</p>", unsafe_allow_html=True)
-    # st.text(f"FAIL_TO_PASS: {fail_to_pass_success}/{fail_to_pass_total}")
-    # for test in report["FAIL_TO_PASS"]["success"]:
-    #     st.markdown(f"<p>{pass_text} {test}</p>", unsafe_allow_html=True)
-    # for test in report["FAIL_TO_PASS"]["failure"]:
-    #     st.markdown(f"<p>{fail_text} {test}</p>", unsafe_allow_html=True)
 
     # too much spacing between tests, so reduce the spacing between <p> tags
     st.text(f"PASS_TO_PASS: {pass_to_pass_success}/{pass_to_pass_total}")
