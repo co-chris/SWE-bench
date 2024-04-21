@@ -43,7 +43,7 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
 
 
 
-
+    # instance_id: datapoint
     eval_refs = get_eval_refs(swe_bench_tasks)
     # print (eval_refs.keys())
     # fdsafa
@@ -75,10 +75,13 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
     # Iterate through predictions'
     print (f"Total predictions: {len(predictions)}")
     for p in predictions:
+
+
         instance_id = p["instance_id"]
         # model_name = p["model_name_or_path"]
         # print (p.keys())
-        # fasd
+        # fadfasd
+        # # fasd
         # 
         # if repo not in report_map:
         #     report_map[repo] = {k: [] for k in keys}
@@ -138,17 +141,33 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
             # return {}, False
         report_map["applied"].append(instance_id)
 
+        # print (log_content)
+        print (instance_id)
+
+
         # Get status map of evaluation results
         passed_content = log_content.split(f"{APPLY_PATCH_PASS} (pred)")[-1]
         repo = instance_id.split(".")[0].rsplit("-", 1)[0].replace("__", "/")
-        tests_statuses = MAP_REPO_TO_PARSER[repo](passed_content)
+        log_parser = MAP_REPO_TO_PARSER[repo]
+        tests_statuses = log_parser(passed_content)
         expected_statuses = eval_refs[instance_id]
+        print (expected_statuses)
+        fadssafd
 
         report = get_eval_report(tests_statuses, expected_statuses)
         pass_to_pass_success = len(report["PASS_TO_PASS"]["success"])
         pass_to_pass_total = len(report["PASS_TO_PASS"]["success"]) + len(report["PASS_TO_PASS"]["failure"])
         fail_to_pass_success = len(report["FAIL_TO_PASS"]["success"])
         fail_to_pass_total = len(report["FAIL_TO_PASS"]["success"]) + len(report["FAIL_TO_PASS"]["failure"])
+        
+        print (report["PASS_TO_PASS"]["success"])
+        print (report["FAIL_TO_PASS"]["success"])
+        print (report["PASS_TO_PASS"]["failure"])
+        print (report["FAIL_TO_PASS"]["failure"])
+        fads
+        
+        
+        
         # print (f"{instance_id}: {pass_to_pass_success}/{pass_to_pass_total} {fail_to_pass_success}/{fail_to_pass_total}")
         # # print (report)
         # for k, v in report.items():
@@ -253,3 +272,15 @@ if __name__ == "__main__":
         #     print (f"\t{instance}")
 
 print ()
+
+
+# # print all the resovled instances
+# print ("Resolved Instances:")
+# for instance in report["resolved"]:
+#     print (f"\t{instance}")
+
+# output_path = "/home/chris_cohere_ai/SWE-bench-stuff/tasks/resolved_instances/swe-bench-oracle-resolved.json"
+# with open(output_path, 'w') as f:
+#     json.dump(report["resolved"], f, indent=4)
+# print (f"Saved resolved instances to {output_path}")
+

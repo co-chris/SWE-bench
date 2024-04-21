@@ -28,6 +28,8 @@ from pygments.lexers import DiffLexer
 import sys
 sys.path.insert(0, '.')
 from swebench.harness.utils import get_instances
+from swebench.metrics.log_parsers import MAP_REPO_TO_PARSER
+from swebench.metrics.report import get_eval_report
 # from swebench.harness.make_report import get_model_report2
 
 
@@ -308,15 +310,83 @@ with cols[1]:
     # st.text(f"Number of PASS_TO_PASS tests: {len(tests_PASS_TO_PASS)}")
     # st.text(f"Number of FAIL_TO_PASS tests: {len(tests_FAIL_TO_PASS)}")
     # use markdown and make the number blue
-    st.markdown(f"Number of PASS_TO_PASS tests: <span style='color:green'>{len(tests_PASS_TO_PASS)}</span>", unsafe_allow_html=True)
-    st.markdown(f"Number of FAIL_TO_PASS tests: <span style='color:green'>{len(tests_FAIL_TO_PASS)}</span>", unsafe_allow_html=True)
 
-    log_file, result = get_model_report3(model=model,
+
+    # st.markdown(f"Number of PASS_TO_PASS tests: <span style='color:green'>{len(tests_PASS_TO_PASS)}</span>", unsafe_allow_html=True)
+    # st.markdown(f"Number of FAIL_TO_PASS tests: <span style='color:green'>{len(tests_FAIL_TO_PASS)}</span>", unsafe_allow_html=True)
+
+    log_content, result = get_model_report3(model=model,
                                     instance_id=instance_id,) #
 
-    st.markdown("<h3>Results</h3>", unsafe_allow_html=True)
-    st.text(result)
 
 
-    st.markdown("<h4>Log File</h4>", unsafe_allow_html=True)
-    st.text(log_file)
+    # Get status map of evaluation results
+    passed_content = log_content.split(f">>>>> Applied Patch (pred)")[-1]
+    repo = instance_id.split(".")[0].rsplit("-", 1)[0].replace("__", "/")
+    log_parser = MAP_REPO_TO_PARSER[repo]
+    tests_statuses = log_parser(passed_content)
+    # expected_statuses = eval_refs[instance_id]
+    expected_statuses = {
+        "instance_id": instance_id,
+        "PASS_TO_PASS": tests_PASS_TO_PASS,
+        "FAIL_TO_PASS": tests_FAIL_TO_PASS,
+    }
+    # print (expected_statuses)
+
+    report = get_eval_report(tests_statuses, expected_statuses)
+    pass_to_pass_success = len(report["PASS_TO_PASS"]["success"])
+    pass_to_pass_total = len(report["PASS_TO_PASS"]["success"]) + len(report["PASS_TO_PASS"]["failure"])
+    fail_to_pass_success = len(report["FAIL_TO_PASS"]["success"])
+    fail_to_pass_total = len(report["FAIL_TO_PASS"]["success"]) + len(report["FAIL_TO_PASS"]["failure"])
+    
+    # print (report["PASS_TO_PASS"]["success"])
+    # print (report["FAIL_TO_PASS"]["success"])
+    # print (report["PASS_TO_PASS"]["failure"])
+    # print (report["FAIL_TO_PASS"]["failure"])
+
+
+
+
+
+
+
+
+
+    # st.markdown("<h3>Results</h3>", unsafe_allow_html=True)
+    # st.text(result)
+
+    pass_text = "<span style='color:green'>PASSED</span>"
+    fail_text = "<span style='color:red'>FAILED</span>"
+
+    # st.text(f"PASS_TO_PASS: {pass_to_pass_success}/{pass_to_pass_total}")
+    # for test in report["PASS_TO_PASS"]["success"]:
+    #     st.markdown(f"<p>{pass_text} {test}</p>", unsafe_allow_html=True)
+    # for test in report["PASS_TO_PASS"]["failure"]:
+    #     st.markdown(f"<p>{fail_text} {test}</p>", unsafe_allow_html=True)
+    # st.text(f"FAIL_TO_PASS: {fail_to_pass_success}/{fail_to_pass_total}")
+    # for test in report["FAIL_TO_PASS"]["success"]:
+    #     st.markdown(f"<p>{pass_text} {test}</p>", unsafe_allow_html=True)
+    # for test in report["FAIL_TO_PASS"]["failure"]:
+    #     st.markdown(f"<p>{fail_text} {test}</p>", unsafe_allow_html=True)
+
+    # too much spacing between tests, so reduce the spacing between <p> tags
+    st.text(f"PASS_TO_PASS: {pass_to_pass_success}/{pass_to_pass_total}")
+    for test in report["PASS_TO_PASS"]["success"]:
+        st.markdown(f"<p style='margin: 0px'>{pass_text} {test}</p>", unsafe_allow_html=True)
+    for test in report["PASS_TO_PASS"]["failure"]:
+        st.markdown(f"<p style='margin: 0px'>{fail_text} {test}</p>", unsafe_allow_html=True)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.text(f"FAIL_TO_PASS: {fail_to_pass_success}/{fail_to_pass_total}")
+    for test in report["FAIL_TO_PASS"]["success"]:
+        st.markdown(f"<p style='margin: 0px'>{pass_text} {test}</p>", unsafe_allow_html=True)
+    for test in report["FAIL_TO_PASS"]["failure"]:
+        st.markdown(f"<p style='margin: 0px'>{fail_text} {test}</p>", unsafe_allow_html=True)
+
+
+
+
+
+
+    st.markdown("<br><h4>Log File</h4>", unsafe_allow_html=True)
+    st.text(log_content)
