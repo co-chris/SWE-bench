@@ -26,6 +26,21 @@ from swebench.metrics.constants import (
 
 
 
+def get_log_path(log_dir, model_version, instance_id, model):
+    log_path = os.path.join(log_dir, f"{model_version}/{instance_id}.{model_version}.eval.log")
+    # check if it exists
+    if not os.path.exists(log_path):
+        # v2
+        log_path = os.path.join(log_dir, model_version, f"{instance_id}.{model}.log")
+
+        # if "provided_patch" in model_version:
+        #     log_path = os.path.join(log_dir, model_version, f"{instance_id}.their_provided_patch.log")
+
+    return log_path
+
+
+
+
 
 def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suffix):
     """
@@ -95,10 +110,14 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
         # Get log file
         # log_path = os.path.join(log_dir, f"{model}/{instance_id}.{model}.eval.log")
         
+        if log_suffix is None:
+            log_suffix = ''
         
         # v2
-        log_path = os.path.join(log_dir, model+log_suffix, f"{instance_id}.{model}.log")
-
+        # log_path = os.path.join(log_dir, model+log_suffix, f"{instance_id}.{model}.log")
+        log_path = get_log_path(log_dir, model+log_suffix, instance_id, model)
+        # print (log_path)
+        # fadsfa
 
         # print (log_path)
         # fasdf
@@ -142,7 +161,7 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
         report_map["applied"].append(instance_id)
 
         # print (log_content)
-        print (instance_id)
+        # print (instance_id)
 
 
         # Get status map of evaluation results
@@ -151,8 +170,8 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
         log_parser = MAP_REPO_TO_PARSER[repo]
         tests_statuses = log_parser(passed_content)
         expected_statuses = eval_refs[instance_id]
-        print (expected_statuses)
-        fadssafd
+        # print (expected_statuses)
+        # fadssafd
 
         report = get_eval_report(tests_statuses, expected_statuses)
         pass_to_pass_success = len(report["PASS_TO_PASS"]["success"])
@@ -160,11 +179,11 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
         fail_to_pass_success = len(report["FAIL_TO_PASS"]["success"])
         fail_to_pass_total = len(report["FAIL_TO_PASS"]["success"]) + len(report["FAIL_TO_PASS"]["failure"])
         
-        print (report["PASS_TO_PASS"]["success"])
-        print (report["FAIL_TO_PASS"]["success"])
-        print (report["PASS_TO_PASS"]["failure"])
-        print (report["FAIL_TO_PASS"]["failure"])
-        fads
+        # print (report["PASS_TO_PASS"]["success"])
+        # print (report["FAIL_TO_PASS"]["success"])
+        # print (report["PASS_TO_PASS"]["failure"])
+        # print (report["FAIL_TO_PASS"]["failure"])
+        # fads
         
         
         
@@ -176,6 +195,7 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
 
         if get_resolution_status(report) == ResolvedStatus.FULL.value:
             report_map["resolved"].append(instance_id)
+            print (f"Resolved: {instance_id}")
 
     return report_map
 

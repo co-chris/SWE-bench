@@ -189,7 +189,7 @@ class TestbedContextManager:
             len(self.task_instances_grouped) == 1 and \
             len(list(self.task_instances_grouped.values())[0]) == 1
         
-        # Create log file for testbed
+        # Create testbed file
         log_file_name = "testbed"
         if self.is_single_repo_version:
             key, versions = list(self.task_instances_grouped.items())[0]

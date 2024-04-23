@@ -272,7 +272,8 @@ def main(
         #     shutil.rmtree(temp_dir, ignore_errors=True)
 
         # Delete testbed_model_dir
-        shutil.rmtree(testbed_model_dir, ignore_errors=True)
+        # shutil.rmtree(testbed_model_dir, ignore_errors=True)
+        print ("done")
 
 
 
