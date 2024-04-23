@@ -351,63 +351,56 @@ with cols[1]:
 
     log_content, result = get_model_report3(log_path=log_path)
 
+    if ">>>>> Applied Patch (pred)" in log_content:
+
+        # Get status map of evaluation results
+        passed_content = log_content.split(f">>>>> Applied Patch (pred)")[-1]
+        repo = instance_id.split(".")[0].rsplit("-", 1)[0].replace("__", "/")
+        log_parser = MAP_REPO_TO_PARSER[repo]
+        tests_statuses = log_parser(passed_content)
+        # expected_statuses = eval_refs[instance_id]
+        expected_statuses = {
+            "instance_id": instance_id,
+            "PASS_TO_PASS": tests_PASS_TO_PASS,
+            "FAIL_TO_PASS": tests_FAIL_TO_PASS,
+        }
+        # print (expected_statuses)
+
+        report = get_eval_report(tests_statuses, expected_statuses)
+        pass_to_pass_success = len(report["PASS_TO_PASS"]["success"])
+        pass_to_pass_total = len(report["PASS_TO_PASS"]["success"]) + len(report["PASS_TO_PASS"]["failure"])
+        fail_to_pass_success = len(report["FAIL_TO_PASS"]["success"])
+        fail_to_pass_total = len(report["FAIL_TO_PASS"]["success"]) + len(report["FAIL_TO_PASS"]["failure"])
+        
+        # print (report["PASS_TO_PASS"]["success"])
+        # print (report["FAIL_TO_PASS"]["success"])
+        # print (report["PASS_TO_PASS"]["failure"])
+        # print (report["FAIL_TO_PASS"]["failure"])
 
 
-    # Get status map of evaluation results
-    passed_content = log_content.split(f">>>>> Applied Patch (pred)")[-1]
-    repo = instance_id.split(".")[0].rsplit("-", 1)[0].replace("__", "/")
-    log_parser = MAP_REPO_TO_PARSER[repo]
-    tests_statuses = log_parser(passed_content)
-    # expected_statuses = eval_refs[instance_id]
-    expected_statuses = {
-        "instance_id": instance_id,
-        "PASS_TO_PASS": tests_PASS_TO_PASS,
-        "FAIL_TO_PASS": tests_FAIL_TO_PASS,
-    }
-    # print (expected_statuses)
+        # st.markdown("<h3>Results</h3>", unsafe_allow_html=True)
+        # st.text(result)
 
-    report = get_eval_report(tests_statuses, expected_statuses)
-    pass_to_pass_success = len(report["PASS_TO_PASS"]["success"])
-    pass_to_pass_total = len(report["PASS_TO_PASS"]["success"]) + len(report["PASS_TO_PASS"]["failure"])
-    fail_to_pass_success = len(report["FAIL_TO_PASS"]["success"])
-    fail_to_pass_total = len(report["FAIL_TO_PASS"]["success"]) + len(report["FAIL_TO_PASS"]["failure"])
-    
-    # print (report["PASS_TO_PASS"]["success"])
-    # print (report["FAIL_TO_PASS"]["success"])
-    # print (report["PASS_TO_PASS"]["failure"])
-    # print (report["FAIL_TO_PASS"]["failure"])
+        pass_text = "<span style='color:green'>PASSED</span>"
+        fail_text = "<span style='color:red'>FAILED</span>"
 
 
+        # too much spacing between tests, so reduce the spacing between <p> tags
+        st.text(f"PASS_TO_PASS: {pass_to_pass_success}/{pass_to_pass_total}")
+        for test in report["PASS_TO_PASS"]["success"]:
+            st.markdown(f"<p style='margin: 0px'>{pass_text} {test}</p>", unsafe_allow_html=True)
+        for test in report["PASS_TO_PASS"]["failure"]:
+            st.markdown(f"<p style='margin: 0px'>{fail_text} {test}</p>", unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.text(f"FAIL_TO_PASS: {fail_to_pass_success}/{fail_to_pass_total}")
+        for test in report["FAIL_TO_PASS"]["success"]:
+            st.markdown(f"<p style='margin: 0px'>{pass_text} {test}</p>", unsafe_allow_html=True)
+        for test in report["FAIL_TO_PASS"]["failure"]:
+            st.markdown(f"<p style='margin: 0px'>{fail_text} {test}</p>", unsafe_allow_html=True)
 
-
-
-
-
-
-
-    # st.markdown("<h3>Results</h3>", unsafe_allow_html=True)
-    # st.text(result)
-
-    pass_text = "<span style='color:green'>PASSED</span>"
-    fail_text = "<span style='color:red'>FAILED</span>"
-
-
-    # too much spacing between tests, so reduce the spacing between <p> tags
-    st.text(f"PASS_TO_PASS: {pass_to_pass_success}/{pass_to_pass_total}")
-    for test in report["PASS_TO_PASS"]["success"]:
-        st.markdown(f"<p style='margin: 0px'>{pass_text} {test}</p>", unsafe_allow_html=True)
-    for test in report["PASS_TO_PASS"]["failure"]:
-        st.markdown(f"<p style='margin: 0px'>{fail_text} {test}</p>", unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.text(f"FAIL_TO_PASS: {fail_to_pass_success}/{fail_to_pass_total}")
-    for test in report["FAIL_TO_PASS"]["success"]:
-        st.markdown(f"<p style='margin: 0px'>{pass_text} {test}</p>", unsafe_allow_html=True)
-    for test in report["FAIL_TO_PASS"]["failure"]:
-        st.markdown(f"<p style='margin: 0px'>{fail_text} {test}</p>", unsafe_allow_html=True)
-
-
-
+    else:
+        st.text("Patch not applied")
 
 
 

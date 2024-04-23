@@ -65,7 +65,7 @@ def main(
         raise ValueError("--log_dir must exist and point at a directory")
     if not os.path.exists(testbed) or not os.path.isdir(testbed):
         raise ValueError("--testbed must exist and point at a directory")
-    
+
     tasks = list(get_eval_refs(swe_bench_tasks).values())
 
     # log_suffix = log_suffix if log_suffix is not None else ""
@@ -73,9 +73,12 @@ def main(
     # Verify arguments are formatted correctly
     if not isinstance(tasks, list):
         raise ValueError(f"{swe_bench_tasks} must contain an array of tasks")
-    tasks_map = {t[KEY_INSTANCE_ID]: t for t in tasks}
-    predictions_path = os.path.abspath(predictions_path)
-    validate_predictions(predictions_path, [t[KEY_INSTANCE_ID] for t in tasks])
+    
+    # print (predictions_path)
+    # predictions_path = os.path.abspath(predictions_path)
+    # print (predictions_path)
+    # fdssd
+    # validate_predictions(predictions_path, [t[KEY_INSTANCE_ID] for t in tasks])
 
     # Group predictions by model
     predictions = get_instances(predictions_path)
@@ -97,21 +100,43 @@ def main(
         model_log_dir = os.path.join(log_dir, model_name)
     else:
         model_log_dir = os.path.join(log_dir, model_name+log_suffix)
+    
+
+    allow_overwrite = True
+    print (model_log_dir)
+    # if it exists, stop
+    if os.path.exists(model_log_dir) and not allow_overwrite:
+        logger.info(f"Log directory {model_log_dir} already exists")
+        return
+    # else:
+    #     print ("does not exist")
+    # # fasdfas
+
+    # add log file
+    for p in predictions:
+        log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.log")
+        p["log_file"] = log_file
 
     # remove ones that are already done
     if skip_existing:
         predictions_todo = []
         for p in predictions:
-            log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.log")
+            # log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.log")
             if not os.path.exists(log_file):
                 # add log_file to p
-                p["log_file"] = log_file
+                # p["log_file"] = log_file
                 predictions_todo.append(p)
         predictions = predictions_todo
+    
+    # for debugging, only do 2
+    predictions = predictions[:2]
+
+
 
     # For each model, split predictions by repo + save to folder
     # for model, predictions in map_model_to_predictions.items():
     # Group predictions by repository, version in order to install dependencies
+    tasks_map = {t[KEY_INSTANCE_ID]: t for t in tasks}
     map_repo_version_to_predictions = {}
     for p in predictions:
         instance_id = p[KEY_INSTANCE_ID]
