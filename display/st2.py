@@ -295,8 +295,8 @@ model_output_path = os.path.join(output_dir, output_files[models.index(model)])
 # print (model_output_path)
 predictions = get_instances(model_output_path)
 
-# if pytest not in instance id, remove it
-predictions = [p for p in predictions if "pytest-dev__pytest-5227" in p["instance_id"]]
+# # if pytest not in instance id, remove it
+# predictions = [p for p in predictions if "pytest-dev__pytest-5227" in p["instance_id"]]
 
 
 # Group the instances
@@ -305,35 +305,55 @@ predictions = [p for p in predictions if "pytest-dev__pytest-5227" in p["instanc
 # - fails tests
 # - resolves tests
 
-groups = {
-    # "not_generated": [],
-    "patch_applied_failed": [],
-    "fails_tests": [],
-    "resolves_tests": [],
-}
-for pred in predictions:
-    instance_id = pred["instance_id"]
-    tests_PASS_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["PASS_TO_PASS"].values[0])
-    tests_FAIL_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["FAIL_TO_PASS"].values[0])
 
-    log_path = get_log_path(log_dir, model_version, instance_id, model)
-    # log_path = os.path.join(log_dir, "provided_patch", f"{instance_id}.their_provided_patch.eval.log")
-    # print (log_path)
-    log_content, result = get_model_report3(log_path=log_path)
+# check if results file exists
+results_path = os.path.join(log_dir, model_version, "results.json")
+if os.path.exists(results_path):
+    groups = json.load(open(results_path))
 
-    # print (pred.keys()) 
-    
-    if ">>>>> Applied Patch (pred)" not in log_content and ">>>>> Applied Patch (PatchType.PATCH_PRED)" not in log_content:
-        groups["patch_applied_failed"].append(instance_id)
-    else:
-        report = get_tests_results(log_content, instance_id, tests_PASS_TO_PASS, tests_FAIL_TO_PASS)
-        if len(report["PASS_TO_PASS"]["failure"]) == 0 and len(report["FAIL_TO_PASS"]["failure"]) == 0:
-            groups["resolves_tests"].append(instance_id)
+else:
+    groups = {
+        # "not_generated": [],
+        "resolves_tests": [],
+        "fails_tests": [],
+        "patch_applied_failed": [],
+    }
+
+    for pred in predictions:
+        instance_id = pred["instance_id"]
+        tests_PASS_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["PASS_TO_PASS"].values[0])
+        tests_FAIL_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["FAIL_TO_PASS"].values[0])
+
+        log_path = get_log_path(log_dir, model_version, instance_id, model)
+        # log_path = os.path.join(log_dir, "provided_patch", f"{instance_id}.their_provided_patch.eval.log")
+        # print (log_path)
+        log_content, result = get_model_report3(log_path=log_path)
+
+        # print (pred.keys()) 
+        
+        if ">>>>> Applied Patch (pred)" not in log_content and ">>>>> Applied Patch (PatchType.PATCH_PRED)" not in log_content:
+            groups["patch_applied_failed"].append(instance_id)
         else:
-            groups["fails_tests"].append(instance_id)
+            report = get_tests_results(log_content, instance_id, tests_PASS_TO_PASS, tests_FAIL_TO_PASS)
+            if len(report["PASS_TO_PASS"]["failure"]) == 0 and len(report["FAIL_TO_PASS"]["failure"]) == 0:
+                groups["resolves_tests"].append(instance_id)
+            else:
+                groups["fails_tests"].append(instance_id)
 
-# if group is empty, remove it
-groups = {k: v for k, v in groups.items() if v}
+    # if group is empty, remove it
+    groups = {k: v for k, v in groups.items() if v}
+
+    # save the groups
+    with open(results_path, "w") as file:
+        json.dump(groups, file)
+        print (f"Results saved to {results_path}")
+
+
+
+
+
+
+
 
 with cols[0]:
     print (f"Number of predictions: {len(predictions)}")
