@@ -295,6 +295,21 @@ model_output_path = os.path.join(output_dir, output_files[models.index(model)])
 # print (model_output_path)
 predictions = get_instances(model_output_path)
 
+
+# for pred in predictions:
+#     instance_id = pred["instance_id"]
+#     tests_PASS_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["PASS_TO_PASS"].values[0])
+#     tests_FAIL_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["FAIL_TO_PASS"].values[0])
+#     # print (tests_PASS_TO_PASS)
+#     # print ()
+#     # print (tests_FAIL_TO_PASS)
+#     # fsdafsda
+
+
+
+
+
+
 # # if pytest not in instance id, remove it
 # predictions = [p for p in predictions if "pytest-dev__pytest-5227" in p["instance_id"]]
 
@@ -323,6 +338,9 @@ else:
         instance_id = pred["instance_id"]
         tests_PASS_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["PASS_TO_PASS"].values[0])
         tests_FAIL_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["FAIL_TO_PASS"].values[0])
+        # print (tests_PASS_TO_PASS)
+        # print (tests_FAIL_TO_PASS)
+        # fasdfa
 
         log_path = get_log_path(log_dir, model_version, instance_id, model)
         # log_path = os.path.join(log_dir, "provided_patch", f"{instance_id}.their_provided_patch.eval.log")
@@ -418,6 +436,12 @@ tests_FAIL_TO_PASS = df[df["instance_id"] == instance_id]["FAIL_TO_PASS"].values
 tests_PASS_TO_PASS = json.loads(tests_PASS_TO_PASS)
 tests_FAIL_TO_PASS = json.loads(tests_FAIL_TO_PASS)
 
+# print ('tests_PASS_TO_PASS')
+# for testname in tests_PASS_TO_PASS:
+#     print (testname)
+# print ('tests_FAIL_TO_PASS')
+# for testname in tests_FAIL_TO_PASS:
+#     print (testname)
 
 
 

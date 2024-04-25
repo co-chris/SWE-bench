@@ -112,6 +112,10 @@ def main(
     #     print ("does not exist")
     # # fasdfas
 
+    # Create log, temp directories if they don't exist
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+        
     # add log file
     for p in predictions:
         log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.log")
@@ -129,7 +133,7 @@ def main(
         predictions = predictions_todo
     
     # for debugging, only do 2
-    predictions = predictions[:2]
+    predictions = predictions[:5]
 
 
 

@@ -101,28 +101,36 @@ def setup_testbed(data: dict):
         verbose=data_dict.verbose,
     ) as tcm:
         distributed_task_list = tcm.get_distributed_tasks()
+        # for task_list in distributed_task_list:
+        #     # better print
+        #     task_list_testbed = task_list["testbed"].split("/", 6)[-1]
+        #     print(
+        #         # f"{task_list['testbed']}: {len(task_list['task_instances'])} instances"
+        #         f"{task_list_testbed}: {blue(len(task_list['task_instances']))} instances"
+        #     )
+
+        # if len(distributed_task_list) == 1:
+        #     data_dict.func(distributed_task_list[0])
+        #     return
+
+        
+        # pool = Pool(processes=len(distributed_task_list))
+        # pool.map(data_dict.func, distributed_task_list)
+        # pool.close()
+        # pool.join()
+        # use for loop instead
         for task_list in distributed_task_list:
-            # better print
+            start_time = time.time()
             task_list_testbed = task_list["testbed"].split("/", 6)[-1]
-            print(
-                # f"{task_list['testbed']}: {len(task_list['task_instances'])} instances"
-                f"{task_list_testbed}: {blue(len(task_list['task_instances']))} instances"
-            )
-
-        if len(distributed_task_list) == 1:
-            data_dict.func(distributed_task_list[0])
-            return
-
-        start_time = time.time()
-        pool = Pool(processes=len(distributed_task_list))
-        pool.map(data_dict.func, distributed_task_list)
-        pool.close()
-        pool.join()
-        total_time = time.time() - start_time
-
-        for task_list in distributed_task_list:
-            task_list_testbed = task_list["testbed"].split("/", 6)[-1]
+            print(f"{task_list_testbed}: {blue(len(task_list['task_instances']))} instances")
+            data_dict.func(task_list)
+            total_time = time.time() - start_time
             print (f"{task_list_testbed}: completed {green(len(task_list['task_instances']))} in {total_time:.2f} secs")
+
+    
+        # for task_list in distributed_task_list:
+        #     task_list_testbed = task_list["testbed"].split("/", 6)[-1]
+        #     print (f"{task_list_testbed}: completed {green(len(task_list['task_instances']))} in {total_time:.2f} secs")
             
 
 
