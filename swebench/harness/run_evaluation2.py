@@ -84,7 +84,7 @@ def main(
     predictions = get_instances(predictions_path)
     map_model_to_predictions = {}
     for p in predictions:
-        model = p[KEY_MODEL]
+        model = p["model_name_or_path"]
         if model not in map_model_to_predictions:
             map_model_to_predictions[model] = []
         map_model_to_predictions[model].append(p)
@@ -118,7 +118,7 @@ def main(
         
     # add log file
     for p in predictions:
-        log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.log")
+        log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p["model_name_or_path"]}.log")
         p["log_file"] = log_file
 
     # remove ones that are already done
@@ -161,6 +161,8 @@ def main(
     print (f"# of evals todo: {blue(len(predictions))}")
     print (f"# of repos: {blue(len(map_repo_version_to_predictions))}")
     print ("########################################")
+
+    fasdfasd
 
 
     eval_args = []
