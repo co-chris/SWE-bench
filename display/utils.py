@@ -6,13 +6,19 @@ from swebench.metrics.report import get_eval_report
 
 def get_log_path(log_dir, model_version, instance_id, model):
     log_path = os.path.join(log_dir, f"{model_version}/{instance_id}.{model_version}.eval.log")
+    # print ('1', log_path)
     # check if it exists
     if not os.path.exists(log_path):
         # v2
         log_path = os.path.join(log_dir, model_version, f"{instance_id}.{model}.log")
+        # print ('2', log_path)
 
         # if "provided_patch" in model_version:
         #     log_path = os.path.join(log_dir, model_version, f"{instance_id}.their_provided_patch.log")
+
+    if not os.path.exists(log_path):
+        model = model.split("_")[0]
+        log_path = os.path.join(log_dir, model_version, f"{instance_id}.{model}.log")
 
     return log_path
 

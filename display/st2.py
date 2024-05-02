@@ -218,10 +218,23 @@ model_version = model
 
 
 # get the model output
-model_output_path = os.path.join(output_dir, output_files[models.index(model)])
+output_file = output_files[models.index(model)]
+model_output_path = os.path.join(output_dir, output_file)
 # print (model_output_path)
 predictions = get_instances(model_output_path)
 
+outputs = {}
+# read jsonl file
+with open(model_output_path, "r") as file:
+    for line in file:
+        # outputs.append(json.loads(line))
+        line = json.loads(line)
+        instance_id = line["instance_id"]
+        outputs[instance_id] = line
+
+# print (len(outputs))
+# print (outputs[0].keys())
+# fdasf
 
 # for pred in predictions:
 #     instance_id = pred["instance_id"]
@@ -250,7 +263,8 @@ predictions = get_instances(model_output_path)
 
 # check if results file exists
 results_path = os.path.join(log_dir, model_version, "results.json")
-if os.path.exists(results_path):
+if 0: #os.path.exists(results_path):
+    print (f"Results loaded from {results_path}")
     groups = json.load(open(results_path))
 
 else:
@@ -270,6 +284,10 @@ else:
         # fasdfa
 
         log_path = get_log_path(log_dir, model_version, instance_id, model)
+        # print (log_path)
+        # print (os.path.exists(log_path))
+        # /home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus_round2
+        # fasfsd
         # log_path = os.path.join(log_dir, "provided_patch", f"{instance_id}.their_provided_patch.eval.log")
         # print (log_path)
         log_content, result = get_model_report3(log_path=log_path)
@@ -291,7 +309,7 @@ else:
     # save the groups
     with open(results_path, "w") as file:
         json.dump(groups, file)
-        print (f"Results saved to {results_path}")
+        # print (f"Results saved to {results_path}")
 
 
 
@@ -342,7 +360,7 @@ with cols[0]:
 # instance_id = st.selectbox("Select instance_id", df["instance_id"])
 
 
-
+# print (df.columns)
 
 input_text = df[df["instance_id"] == instance_id]["text"].values[0]
 input_text_tokens = len(input_text) / 3.4
@@ -354,6 +372,10 @@ split_input_text2 = input_text2.split("</code>")
 input_text2 = split_input_text2[0] + "</code>"
 input_text2_patch = split_input_text2[1]
 
+if "prompt" in outputs[instance_id]:
+    full_prompt = outputs[instance_id]["prompt"]
+else:
+    full_prompt = ''
 
 
 
@@ -403,6 +425,8 @@ with cols[0]:
     with st.expander("Patch Prompt", expanded=False):
         st.code(input_text2_patch, language="python")
 
+    with st.expander("Full Prompt", expanded=False):
+        st.code(full_prompt, language="python")
 
 
 

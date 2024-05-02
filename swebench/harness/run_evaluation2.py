@@ -82,19 +82,24 @@ def main(
 
     # Group predictions by model
     predictions = get_instances(predictions_path)
-    map_model_to_predictions = {}
-    for p in predictions:
-        model = p["model_name_or_path"]
-        if model not in map_model_to_predictions:
-            map_model_to_predictions[model] = []
-        map_model_to_predictions[model].append(p)
+    # map_model_to_predictions = {}
+    # for p in predictions:
+    #     model = p["model_name_or_path"]
+    #     if model not in map_model_to_predictions:
+    #         map_model_to_predictions[model] = []
+    #     map_model_to_predictions[model].append(p)
     # logger.info(f"Found {len(predictions)} predictions across {len(map_model_to_predictions)} model(s) in predictions file")
 
     # only one model at a time
-    assert len(map_model_to_predictions) == 1, "Only one model at a time is supported"
-    model_name = list(map_model_to_predictions.keys())[0]
-    predictions = map_model_to_predictions[model_name]
+    # assert len(map_model_to_predictions) == 1, "Only one model at a time is supported"
+    # model_name = list(map_model_to_predictions.keys())[0]
+    # predictions = map_model_to_predictions[model_name]
     n_all_preds = len(predictions)
+
+    model_name = predictions_path.split("/")[-1].split("__")[0]
+    model = model_name
+    # print (model_name)
+    # fsadfas
 
     if log_suffix is None:
         model_log_dir = os.path.join(log_dir, model_name)
@@ -103,7 +108,7 @@ def main(
     
 
     allow_overwrite = True
-    print (model_log_dir)
+    print (f"Log dir: {blue(model_log_dir)}")
     # if it exists, stop
     if os.path.exists(model_log_dir) and not allow_overwrite:
         logger.info(f"Log directory {model_log_dir} already exists")
@@ -118,7 +123,7 @@ def main(
         
     # add log file
     for p in predictions:
-        log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p["model_name_or_path"]}.log")
+        log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p['model_name_or_path']}.log")
         p["log_file"] = log_file
 
     # remove ones that are already done
@@ -133,7 +138,7 @@ def main(
         predictions = predictions_todo
     
     # for debugging, only do 2
-    predictions = predictions[:5]
+    # predictions = predictions[:5]
 
 
 
@@ -162,7 +167,6 @@ def main(
     print (f"# of repos: {blue(len(map_repo_version_to_predictions))}")
     print ("########################################")
 
-    fasdfasd
 
 
     eval_args = []

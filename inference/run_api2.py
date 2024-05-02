@@ -196,7 +196,7 @@ def cohere_inference(
                 output_dict = {
                     "instance_id": datum["instance_id"], 
                     "model_name_or_path": model_name_or_path,
-                    "prompt": datum["text"],
+                    "prompt": datum["prompt"],
                     "full_output": completion,
                     "model_patch": extract_diff(completion),
                 }
