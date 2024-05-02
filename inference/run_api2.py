@@ -333,7 +333,10 @@ def main(
 
 
 if __name__ == "__main__":
-
+    """
+    python -m inference.run_api2
+    """
+    
     # dataset_name_or_path = "/home/chris_cohere_ai/SWE-bench-stuff/tasks/test_set/swe-bench.json"
     # dataset_name_or_path = "/home/chris_cohere_ai/.cache/huggingface/datasets/princeton-nlp___swe-bench/"
     # dataset_name_or_path = "princeton-nlp/SWE-bench"
@@ -344,7 +347,8 @@ if __name__ == "__main__":
     # model_name = "command-r"
     # model_name = "command-r-plus"
     model_name = "command-r-plus" #-round2"
-    model_name_suffix = "_round2"
+    # model_name_suffix = "_round2"
+    model_name_suffix = "_agent2"
 
     past_output = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r-plus__SWE-bench_oracle__test.jsonl"
     past_logs = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus"

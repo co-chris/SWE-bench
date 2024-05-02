@@ -86,13 +86,15 @@ def evaluate_predictions(data: dict):
             # ):
             #     continue
 
+            patch = task_instance[KEY_PREDICTION]
+            patch = extract_minimal_patch(patch)
 
             # My version
             if not tcm.reset_task_env(task_instance):
                 continue
             if not tcm.run_install_task(task_instance):
                 continue
-            if not tcm.apply_patch(task_instance[KEY_PREDICTION], patch_type=PatchType.PATCH_PRED.value):
+            if not tcm.apply_patch(patch, patch_type=PatchType.PATCH_PRED.value):
                 continue
             if not tcm.run_tests_task(task_instance):
                 continue
