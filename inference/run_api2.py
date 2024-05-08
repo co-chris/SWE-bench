@@ -68,6 +68,7 @@ logging.getLogger().setLevel(logging.WARNING)
 def cohere_inference(
     test_dataset,
     model_name_or_path,
+    max_length,
     output_file,
     past_output,
     past_logs
@@ -81,7 +82,6 @@ def cohere_inference(
     with open(gold_resolved_path, "r") as f:
         resolved_instances = json.load(f)
     print (len(resolved_instances))
-
     datapoints = {}
     for i in range(len(test_dataset)):
         # print (test_dataset[i]['instance_id'])
@@ -118,35 +118,48 @@ def cohere_inference(
             
     print (len(datapoints2))
 
-    # Collect previous outputs
-    print ('Collect previous outputs')
-    with open(past_output, "r") as f:
-        for line in f:
-            data = json.loads(line)
-            # print (data.keys())
-            # fdasdf
-            instance_id = data["instance_id"]
-            if instance_id in datapoints2:
-                datapoints2[instance_id]["model_output"] = data["model_patch"]
 
 
-    # Create prompts here using past prompts and errors. 
-    print ('Create prompts here using past prompts and errors.')
-    for instance_id, datapoint in datapoints2.items():
-        prompt = datapoint["text"]
-        prompt += "\n\nThis is what the model outputted last time:\n"
-        prompt += datapoint["model_output"]
-        prompt += "\n\nThis is the error message:\n"
-        prompt += datapoint["log_content"][-2000:]
-        prompt += "\n\nPlease fix the error and provide a patch that passes the tests."
-        datapoint["prompt"] = prompt
+
+    if past_output:
+        # Collect previous outputs
+        print ('Collect previous outputs')
+        with open(past_output, "r") as f:
+            for line in f:
+                data = json.loads(line)
+                # print (data.keys())
+                # fdasdf
+                instance_id = data["instance_id"]
+                if instance_id in datapoints2:
+                    datapoints2[instance_id]["model_output"] = data["model_patch"]
+                    datapoints2[instance_id]["prompt"] = data["prompt"]
+
+
+        # Create prompts here using past prompts and errors. 
+        print ('Create prompts here using past prompts and errors.')
+        for instance_id, datapoint in datapoints2.items():
+            if "prompt" in datapoint:
+                prompt = datapoint["prompt"]
+            else:
+                prompt = datapoint["text"]
+            prompt += "\n\nThis is what you outputted last time:\n"
+            prompt += f'<output>\n{datapoint["model_output"]}\n</output>'
+            prompt += "\n\nThis is the error message:\n"
+            prompt += f'<logs>\n{datapoint["log_content"][-2000:]}\n</logs>'
+            prompt += "\n\nPlease fix the error and provide a patch that passes the tests.\n"
+            datapoint["prompt"] = prompt
+            # print (prompt)
+            # fdsaf
+
+
+
 
 
     # Remove instances that are too long
     print ('Remove instances that are too long')
     datapoints = []
     for instance_id, datapoint in datapoints2.items():
-        if len(datapoint["prompt"]) <= 120000 * 3.4:
+        if len(datapoint["prompt"]) <= max_length * 3.4:
             # datapoints[instance_id] = datapoint
             datapoints.append(datapoint)
     print (len(datapoints))
@@ -161,6 +174,7 @@ def cohere_inference(
 
     # prompts = [datum['text'] for datum in test_dataset]
     # fasdafsd
+
 
 
     def get_responses(client, model_name, datapoint):
@@ -229,9 +243,9 @@ def cohere_inference(
 
 def main(
     dataset_name_or_path,
-    split,
     model_name_or_path,
     model_name_suffix,
+    max_length,
     output_dir,
     past_output,
     past_logs,
@@ -250,6 +264,8 @@ def main(
     #     model_nickname = Path(model_name_or_path).name
 
     # print ('\n HEHEHEHEHEHEHEH \n')
+
+    split = 'test'
 
     model_nickname = model_name_or_path + model_name_suffix
     output_file = f"{model_nickname}__{dataset_name_or_path.split('/')[-1]}__{split}"
@@ -303,6 +319,7 @@ def main(
     cohere_inference(
             test_dataset=dataset,
             model_name_or_path=model_name_or_path,
+            max_length=max_length,
             output_file=output_file,
             past_output=past_output,
             past_logs=past_logs
@@ -336,7 +353,7 @@ if __name__ == "__main__":
     """
     python -m inference.run_api2
     """
-    
+
     # dataset_name_or_path = "/home/chris_cohere_ai/SWE-bench-stuff/tasks/test_set/swe-bench.json"
     # dataset_name_or_path = "/home/chris_cohere_ai/.cache/huggingface/datasets/princeton-nlp___swe-bench/"
     # dataset_name_or_path = "princeton-nlp/SWE-bench"
@@ -346,17 +363,33 @@ if __name__ == "__main__":
     output_dir = "/home/chris_cohere_ai/SWE-bench-stuff/outputs"
     # model_name = "command-r"
     # model_name = "command-r-plus"
-    model_name = "command-r-plus" #-round2"
+     #-round2"
     # model_name_suffix = "_round2"
-    model_name_suffix = "_agent2"
+    # model_name_suffix = "_agent2"
 
-    past_output = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r-plus__SWE-bench_oracle__test.jsonl"
-    past_logs = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus"
+
+    # past_output = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r-plus__SWE-bench_oracle__test.jsonl"
+    # past_logs = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus"
     
+
+    # model_name = "command-r-plus"
+    # model_name_suffix = "_agent3"
+    # past_output = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r-plus_agent2__SWE-bench_oracle__test.jsonl"
+    # past_logs = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus_agent2"
+
+
+    model_name = "finetuned_35B"
+    model_name_suffix = ""
+    past_output = ""
+    past_logs = ""
+    max_length = 40000
+
+
+
     main(dataset_name_or_path,
-            "test",
             model_name,
             model_name_suffix,
+            max_length,
             output_dir,
             past_output,
             past_logs)

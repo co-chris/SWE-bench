@@ -263,7 +263,7 @@ with open(model_output_path, "r") as file:
 
 # check if results file exists
 results_path = os.path.join(log_dir, model_version, "results.json")
-if 0: #os.path.exists(results_path):
+if os.path.exists(results_path):
     print (f"Results loaded from {results_path}")
     groups = json.load(open(results_path))
 
@@ -323,8 +323,11 @@ with cols[0]:
     # st.text(f"{len(predictions)}/{total_instances} model generated patches")
 
     # Display counts of each group    
+    total = 0
     for group, instances in groups.items():
         st.text(f"{group}: {len(instances)}")
+        total += len(instances)
+    st.text(f"Total: {total}")
 
 with cols[0]:
     # Select the group
@@ -440,6 +443,7 @@ with cols[0]:
 
     patch = patch.replace("<patch>", "")
     patch = patch.replace("</patch>", "")
+    # st.text()
     formatted_diff = highlight_patch(patch)
     components.html(formatted_diff, scrolling=True, height=500)
 
