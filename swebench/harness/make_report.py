@@ -22,7 +22,7 @@ from swebench.metrics.constants import (
     ResolvedStatus
 )
 
-
+from swebench.harness.colours import blue
 
 
 
@@ -42,7 +42,8 @@ def get_log_path(log_dir, model_version, instance_id, model):
 
 
 
-def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suffix):
+# def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suffix):
+def get_model_report2(predictions_path, log_dir):
     """
     """
 
@@ -59,6 +60,7 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
 
 
     # instance_id: datapoint
+    swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
     eval_refs = get_eval_refs(swe_bench_tasks)
     # print (eval_refs.keys())
     # fdsafa
@@ -75,6 +77,18 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
         with open(predictions_path) as f:
             for line in f:
                 predictions.append(json.loads(line))
+
+    # Only keep instances that gold patch solves AND are less than 40k tokens, 818 of them
+    test_instances_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc_750.json"
+    test_instances = json.load(open(test_instances_path))
+    predictions_todo = []
+    for p in predictions:
+        if p["instance_id"] in test_instances:
+            predictions_todo.append(p)
+    predictions = predictions_todo
+    print (f"Filtered to {blue(len(predictions))}: solved by gold and less than max_length tokens")
+    # n_all_preds = len(predictions)
+
 
     
     keys = ["model_patch_does_not_exist", "model_patch_exists", "with_logs", 
@@ -110,19 +124,22 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
         # Get log file
         # log_path = os.path.join(log_dir, f"{model}/{instance_id}.{model}.eval.log")
         
-        if log_suffix is None:
-            log_suffix = ''
+        # if log_suffix is None:
+        #     log_suffix = ''
         
         # v2
         # log_path = os.path.join(log_dir, model+log_suffix, f"{instance_id}.{model}.log")
-        log_path = get_log_path(log_dir, model+log_suffix, instance_id, model)
+        # log_path = get_log_path(log_dir, model+log_suffix, instance_id, model)
+        log_path = os.path.join(log_dir, instance_id+'.log')
+
+
         # print (log_path)
         # fadsfa
 
         # print (log_path)
         # fasdf
         if not os.path.exists(log_path):
-            # print (f"#########Log file {log_path} does not exist###########")
+            print (f"#########Log file {log_path} does not exist###########")
             continue
         report_map["with_logs"].append(instance_id)
 
@@ -169,9 +186,12 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
         repo = instance_id.split(".")[0].rsplit("-", 1)[0].replace("__", "/")
         log_parser = MAP_REPO_TO_PARSER[repo]
         tests_statuses = log_parser(passed_content)
+        print (blue(tests_statuses))
+        # fasdf
         expected_statuses = eval_refs[instance_id]
-        # print (expected_statuses)
-        # fadssafd
+        print ('expected_statuses')
+        print (expected_statuses)
+        # continue
 
         report = get_eval_report(tests_statuses, expected_statuses)
         pass_to_pass_success = len(report["PASS_TO_PASS"]["success"])
@@ -195,7 +215,17 @@ def get_model_report2(model, predictions_path, swe_bench_tasks, log_dir, log_suf
 
         if get_resolution_status(report) == ResolvedStatus.FULL.value:
             report_map["resolved"].append(instance_id)
-            print (f"Resolved: {instance_id}")
+            # print (f"Resolved: {instance_id}")
+        else:
+            print (blue('-------------------------'))
+            print (log_content)
+            print (blue('-------------------------'))
+
+            print (report["PASS_TO_PASS"]["success"])
+            print (report["FAIL_TO_PASS"]["success"])
+            print (report["PASS_TO_PASS"]["failure"])
+            print (report["FAIL_TO_PASS"]["failure"])
+            fads
 
     return report_map
 
@@ -242,14 +272,17 @@ if __name__ == "__main__":
     # log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", type=str, help="Model name", required=True)
+    # parser.add_argument("--model", type=str, help="Model name", required=True)
     parser.add_argument("--predictions_path", type=str, help="Path to predictions file (must be .json)", required=True)
-    parser.add_argument("--log_dir", type=str, help="Path to log directory", required=True)
-    parser.add_argument("--swe_bench_tasks", type=str, help="Path to dataset file or HF datasets name", required=True)
-    parser.add_argument("--log_suffix", type=str, help="(Optional) Suffix to append to log file names", default=None)
+    # parser.add_argument("--log_dir", type=str, help="Path to log directory", required=True)
+    # parser.add_argument("--swe_bench_tasks", type=str, help="Path to dataset file or HF datasets name", required=True)
+    # parser.add_argument("--log_suffix", type=str, help="(Optional) Suffix to append to log file names", default=None)
     args = parser.parse_args()
 
-    report = get_model_report2(args.model, args.predictions_path, args.swe_bench_tasks, args.log_dir, args.log_suffix)
+    log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/provided_patch_2024_05_09"
+
+    # report = get_model_report2(args.model, args.predictions_path, args.swe_bench_tasks, args.log_dir, args.log_suffix)
+    report = get_model_report2(args.predictions_path, log_dir)
     keys = list(report.keys())
     for k in keys:
         print (f"{k}: {len(report[k])}")

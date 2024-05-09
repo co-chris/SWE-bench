@@ -67,52 +67,15 @@ def main(
         raise ValueError("--testbed must exist and point at a directory")
 
     tasks = list(get_eval_refs(swe_bench_tasks).values())
-
     log_suffix = log_suffix if log_suffix is not None else ""
 
-    # Verify arguments are formatted correctly
-    if not isinstance(tasks, list):
-        raise ValueError(f"{swe_bench_tasks} must contain an array of tasks")
-    
-    # print (predictions_path)
-    # predictions_path = os.path.abspath(predictions_path)
-    # print (predictions_path)
-    # fdssd
-    # validate_predictions(predictions_path, [t[KEY_INSTANCE_ID] for t in tasks])
 
-    # Group predictions by model
-    print ('Loading predictions')
-    predictions = get_instances(predictions_path)
-    # map_model_to_predictions = {}
-    # for p in predictions:
-    #     model = p["model_name_or_path"]
-    #     if model not in map_model_to_predictions:
-    #         map_model_to_predictions[model] = []
-    #     map_model_to_predictions[model].append(p)
-    # logger.info(f"Found {len(predictions)} predictions across {len(map_model_to_predictions)} model(s) in predictions file")
-
-    # only one model at a time
-    # assert len(map_model_to_predictions) == 1, "Only one model at a time is supported"
-    # model_name = list(map_model_to_predictions.keys())[0]
-    # predictions = map_model_to_predictions[model_name]
-    n_all_preds = len(predictions)
 
     # model_name = predictions_path.split("/")[-1].split("__")[0]
-    run_name = predictions_path.split("/")[-1].split("__")[0]
-    # model = model_name
-    # print (model_name)
-    # fsadfas
-
-    # if log_suffix is None:
-    #     model_log_dir = os.path.join(log_dir, model_name)
-    # else:
-    #     model_log_dir = os.path.join(log_dir, model_name+log_suffix)
-
+    run_name = predictions_path.split("/")[-1].split("__")[0].split('.')[0]
     model_log_dir = os.path.join(log_dir, run_name+log_suffix)
     
     print (blue(run_name))
-    # print (model_log_dir)
-    # fasdfa
 
     allow_overwrite = True
     print (f"Log dir: {blue(model_log_dir)}")
@@ -120,18 +83,31 @@ def main(
     if os.path.exists(model_log_dir) and not allow_overwrite:
         logger.info(f"Log directory {model_log_dir} already exists")
         return
-    # else:
-    #     print ("does not exist")
-    # # fasdfas
 
     # Create log, temp directories if they don't exist
     if not os.path.exists(log_dir):
         os.makedirs(log_dir, exist_ok=True)
         
+
+    print ('Loading predictions')
+    predictions = get_instances(predictions_path)
+    
+
+    # Only keep instances that gold patch solves AND are less than 40k tokens, 818 of them
+    test_instances_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc_750.json"
+    test_instances = json.load(open(test_instances_path))
+    predictions_todo = []
+    for p in predictions:
+        if p["instance_id"] in test_instances:
+            predictions_todo.append(p)
+    predictions = predictions_todo
+    print (f"Filtered to {blue(len(predictions))}: solved by gold and less than max_length tokens")
+    n_all_preds = len(predictions)
+
     # add log file
     for p in predictions:
         # log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p['model_name_or_path']}.log")
-        log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.log")
+        log_file = os.path.join(model_log_dir, f"{p["instance_id"]}.log")
         p["log_file"] = log_file
 
     # remove ones that are already done
@@ -145,16 +121,6 @@ def main(
                 predictions_todo.append(p)
         predictions = predictions_todo
     
-
-    # Only keep instances that gold patch solves AND are less than 40k tokens, 818 of them
-    test_instances_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc_750.json"
-    test_instances = json.load(open(test_instances_path))
-    predictions_todo = []
-    for p in predictions:
-        if p[KEY_INSTANCE_ID] in test_instances:
-            predictions_todo.append(p)
-    predictions = predictions_todo
-    print (f"Filtered to {blue(len(predictions))}: solved by gold and less than max_length tokens")
 
 
 
@@ -186,7 +152,6 @@ def main(
     print (f"# of preds total: {blue(n_all_preds)}")
     print (f"# of evals completed: {blue(n_all_preds-len(predictions))}")
     print (f"# of evals todo: {blue(len(predictions))}")
-    print (f"# of repos: {blue(len(map_repo_version_to_predictions))}")
     print ("########################################")
 
 
@@ -269,6 +234,7 @@ def main(
     num_processes = min(num_processes, os.cpu_count()-4)
 
     print ("########################################")
+    print (f"# of repos: {blue(len(map_repo_version_to_predictions))}")
     print (f"# of eval_args: {blue(len(eval_args))}")
     print (f"# of num_processes: {blue(num_processes)}")
     print ("########################################")

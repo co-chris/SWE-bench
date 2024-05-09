@@ -88,32 +88,26 @@ def evaluate_predictions(data: dict):
             # ):
             #     continue
 
-            # print (task_instance.keys())
-            full_outputs = task_instance['full_output']
-            patch = extract_diff(full_outputs)
-            # print (full_output)
-            # afsdsfad
-            # patch = task_instance[KEY_PREDICTION]
-            # patch = extract_minimal_patch(patch)
+            # My version
+            if 'full_output' in task_instance:
+                full_output = task_instance['full_output']
+            else:
+                full_output = task_instance['model_patch']
 
+            patch = extract_diff(full_output)
             diff_status = check_diff(patch)
-            # print (diff_status)
-            # if not diff_status:
-            #     print (patch)
-            # fdsaf
 
-
-            
             if not diff_status:
                 with open(tcm.log_file, "a") as f:
                     f.write(f">>>>> Invalid diff\n")
                 continue
-            # My version
             if not tcm.reset_task_env(task_instance):
                 continue
             if not tcm.run_install_task(task_instance):
                 continue
             if not tcm.apply_patch(patch, patch_type="pred"):
+                continue
+            if not tcm.apply_patch(task_instance["test_patch"], patch_type="test"):
                 continue
             if not tcm.run_tests_task(task_instance):
                 continue
