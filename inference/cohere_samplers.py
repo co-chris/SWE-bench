@@ -115,11 +115,15 @@ class Fax_Sampler():
 
 def get_responses(client, model_name, datapoint):
     prompt = datapoint["prompt"]
-    response = client.chat(
-        message=prompt,
-        temperature=0,
-        model=model_name,
-    )
+    try:
+        response = client.chat(
+            message=prompt,
+            temperature=0,
+            model=model_name,
+        )
+    except Exception as e:
+        print (f"Error: {e}")
+        fadsfasd
     return response.__dict__
 
 
@@ -158,7 +162,7 @@ def cohere_inference(
                         "model_name_or_path": ckpt,
                         "prompt": batch[i]["prompt"],
                         "full_output": row["completion"],
-                        "model_patch": extract_diff(row["completion"]),
+                        # "model_patch": extract_diff(row["completion"]),
                     }
 
                     with open(output_file, "a+") as f:
@@ -171,11 +175,11 @@ def cohere_inference(
 
 
     else:
-        # api_key = os.environ.get("COHERE_API_KEY", None)
-        # cohere_client = cohere.Client(api_key)
+        api_key = os.environ.get("COHERE_API_KEY", None)
+        cohere_client = cohere.Client(api_key)
 
-        api_key = os.environ.get("COHERE_STG_API_KEY")
-        cohere_client = cohere.Client(base_url='https://stg.api.cohere.ai', api_key=api_key)
+        # api_key = os.environ.get("COHERE_STG_API_KEY")
+        # cohere_client = cohere.Client(base_url='https://stg.api.cohere.ai', api_key=api_key)
 
 
 
@@ -183,7 +187,7 @@ def cohere_inference(
         get_responses_cohere = lambda x: get_responses(cohere_client, model_path, x)
 
         n_datapoints = len(datapoints)
-        batch_size = 8
+        batch_size = 4
         # batch = []
         batch = []
         for i in tqdm(range(n_datapoints)):
@@ -203,7 +207,7 @@ def cohere_inference(
                         "model_name_or_path": model_path,
                         "prompt": datum["prompt"],
                         "full_output": completion,
-                        "model_patch": extract_diff(completion),
+                        # "model_patch": extract_diff(completion),
                     }
 
                     with open(output_file, "a+") as f:
