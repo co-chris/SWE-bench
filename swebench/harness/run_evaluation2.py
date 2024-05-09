@@ -68,7 +68,7 @@ def main(
 
     tasks = list(get_eval_refs(swe_bench_tasks).values())
 
-    # log_suffix = log_suffix if log_suffix is not None else ""
+    log_suffix = log_suffix if log_suffix is not None else ""
 
     # Verify arguments are formatted correctly
     if not isinstance(tasks, list):
@@ -81,6 +81,7 @@ def main(
     # validate_predictions(predictions_path, [t[KEY_INSTANCE_ID] for t in tasks])
 
     # Group predictions by model
+    print ('Loading predictions')
     predictions = get_instances(predictions_path)
     # map_model_to_predictions = {}
     # for p in predictions:
@@ -96,16 +97,22 @@ def main(
     # predictions = map_model_to_predictions[model_name]
     n_all_preds = len(predictions)
 
-    model_name = predictions_path.split("/")[-1].split("__")[0]
-    model = model_name
+    # model_name = predictions_path.split("/")[-1].split("__")[0]
+    run_name = predictions_path.split("/")[-1].split("__")[0]
+    # model = model_name
     # print (model_name)
     # fsadfas
 
-    if log_suffix is None:
-        model_log_dir = os.path.join(log_dir, model_name)
-    else:
-        model_log_dir = os.path.join(log_dir, model_name+log_suffix)
+    # if log_suffix is None:
+    #     model_log_dir = os.path.join(log_dir, model_name)
+    # else:
+    #     model_log_dir = os.path.join(log_dir, model_name+log_suffix)
+
+    model_log_dir = os.path.join(log_dir, run_name+log_suffix)
     
+    print (blue(run_name))
+    # print (model_log_dir)
+    # fasdfa
 
     allow_overwrite = True
     print (f"Log dir: {blue(model_log_dir)}")
@@ -123,7 +130,8 @@ def main(
         
     # add log file
     for p in predictions:
-        log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p['model_name_or_path']}.log")
+        # log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p['model_name_or_path']}.log")
+        log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.log")
         p["log_file"] = log_file
 
     # remove ones that are already done
@@ -137,6 +145,20 @@ def main(
                 predictions_todo.append(p)
         predictions = predictions_todo
     
+
+    # Only keep instances that gold patch solves AND are less than 40k tokens, 818 of them
+    test_instances_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc_750.json"
+    test_instances = json.load(open(test_instances_path))
+    predictions_todo = []
+    for p in predictions:
+        if p[KEY_INSTANCE_ID] in test_instances:
+            predictions_todo.append(p)
+    predictions = predictions_todo
+    print (f"Filtered to {blue(len(predictions))}: solved by gold and less than max_length tokens")
+
+
+
+    # fdsasfd
     # for debugging, only do 2
     # predictions = predictions[:5]
 
@@ -160,7 +182,7 @@ def main(
         map_repo_version_to_predictions[repo][version].append(p)
 
     print ("########################################")
-    print (f"Model: {blue(model_name)}")
+    print (f"Run name: {blue(run_name)}")
     print (f"# of preds total: {blue(n_all_preds)}")
     print (f"# of evals completed: {blue(n_all_preds-len(predictions))}")
     print (f"# of evals todo: {blue(len(predictions))}")
@@ -172,7 +194,7 @@ def main(
     eval_args = []
     # temp_dirs = []
     count = 0
-    testbed_model_dir = os.path.join(testbed, model_name)
+    testbed_model_dir = os.path.join(testbed, run_name)
     # For each model/repo/version, create testbed folder and save predictions
     # And prepare args for evaluation
     for repo in map_repo_version_to_predictions:
@@ -187,7 +209,7 @@ def main(
             os.makedirs(testbed_model_repo_version_dir, exist_ok=True)
 
             # Create predictions file for model/repo/version in testbed folder
-            file_name = f"{model}_{repo}_{version}_{predictions_path.split('/')[-1]}"
+            file_name = f"{run_name}_{repo}_{version}_{predictions_path.split('/')[-1]}"
             testbed_file = os.path.join(testbed_model_repo_version_dir, file_name)
             if testbed_file.endswith(".jsonl"): # make it .json
                 testbed_file = testbed_file[:-1]
@@ -290,9 +312,9 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--predictions_path", type=str, help="Path to predictions file (must be .json)", required=True)
-    parser.add_argument("--log_dir", type=str, help="Path to log directory", required=True)
-    parser.add_argument("--swe_bench_tasks", type=str, help="Path to dataset file or HF datasets name", required=True)
-    parser.add_argument("--testbed", type=str, help="Path to testbed directory", required=True)
+    # parser.add_argument("--log_dir", type=str, help="Path to log directory", required=True)
+    # parser.add_argument("--swe_bench_tasks", type=str, help="Path to dataset file or HF datasets name", required=True)
+    # parser.add_argument("--testbed", type=str, help="Path to testbed directory", required=True)
     parser.add_argument("--conda_link", type=str, default=None, help="(Optional) URL to conda installation to use")
     parser.add_argument("--log_suffix", type=str, help="(Optional) Suffix to append to log file names", default=None)
     parser.add_argument("--skip_existing", action="store_true", help="(Optional) Skip existing logs")
@@ -300,5 +322,11 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", action="store_true", help="(Optional) Verbose mode")
     parser.add_argument("--num_processes", type=int, help="(Optional) Number of processes to use.", default=-1)
     args = parser.parse_args()
+
+    # add value called testbed to args
+    args.swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
+    args.log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
+    args.testbed = "/home/chris_cohere_ai/SWE-bench-stuff/testbed"
+
     logger.propagate = args.verbose
     main(**vars(args))

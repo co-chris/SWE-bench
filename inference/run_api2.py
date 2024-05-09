@@ -222,32 +222,6 @@ def filter_examples(dataset, output_file, max_length, past_output, past_logs):
 
 
 
-def show_some_outputs(output_file):
-    # Load output file
-    if output_file.exists():
-        with open(output_file, "r") as f:
-            for i, line in enumerate(f):
-
-                data = json.loads(line)
-                # if "</patch>" not in data['full_output']:
-                if 1:
-                    # print (data.keys())
-
-                    print(f"\n\nInstance {blue(i)}")
-                    # print(f"Instance ID: {data['instance_id']}")
-                    # print(f"Prompt:\n{data['prompt']}")
-                    # print ('---')
-                    # print(f"Model output: {data['model_patch']}")
-                    # print(f"Model: {data['model_name_or_path']}")
-                    # print(f"Model path: {data['model_path']}")
-                    print(f"Full output:\n{data['full_output']}")
-                    print (blue(len(data['full_output']) // 3))
-                    print ('-----------------------------------------')
-                    print()
-
-
-
-
 
 
 
@@ -306,10 +280,10 @@ def main(
     output_file = Path(output_dir, output_file + ".jsonl")
     print(f"\nWill write to\n {blue(output_file)}\n")
 
-    show_outputs = 0
-    if show_outputs:
-        show_some_outputs(output_file)
-        quit()
+    # show_outputs = 0
+    # if show_outputs:
+    #     show_some_outputs(output_file)
+    #     quit()
 
     # if it exists, remove file
     if overwrite and output_file.exists():

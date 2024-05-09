@@ -18,6 +18,8 @@ from swebench.harness.utils import (
 )
 from tqdm.auto import tqdm
 
+from swebench.harness.my_checks import check_diff
+from inference.make_datasets.utils import extract_diff
 
 
 def evaluate_predictions(data: dict):
@@ -86,15 +88,32 @@ def evaluate_predictions(data: dict):
             # ):
             #     continue
 
-            patch = task_instance[KEY_PREDICTION]
-            patch = extract_minimal_patch(patch)
+            # print (task_instance.keys())
+            full_outputs = task_instance['full_output']
+            patch = extract_diff(full_outputs)
+            # print (full_output)
+            # afsdsfad
+            # patch = task_instance[KEY_PREDICTION]
+            # patch = extract_minimal_patch(patch)
 
+            diff_status = check_diff(patch)
+            # print (diff_status)
+            # if not diff_status:
+            #     print (patch)
+            # fdsaf
+
+
+            
+            if not diff_status:
+                with open(tcm.log_file, "a") as f:
+                    f.write(f">>>>> Invalid diff\n")
+                continue
             # My version
             if not tcm.reset_task_env(task_instance):
                 continue
             if not tcm.run_install_task(task_instance):
                 continue
-            if not tcm.apply_patch(patch, patch_type=PatchType.PATCH_PRED.value):
+            if not tcm.apply_patch(patch, patch_type="pred"):
                 continue
             if not tcm.run_tests_task(task_instance):
                 continue
