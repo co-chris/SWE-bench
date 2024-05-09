@@ -105,6 +105,52 @@ def display_applied_content(log_content, instance_id, tests_PASS_TO_PASS, tests_
 
 
 
+def group_results(predictions, model_version, model, log_dir, results_path, df):
+    groups = {
+        # "not_generated": [],
+        "resolves_tests": [],
+        "fails_tests": [],
+        "patch_applied_failed": [],
+    }
+
+    for pred in predictions:
+        instance_id = pred["instance_id"]
+        tests_PASS_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["PASS_TO_PASS"].values[0])
+        tests_FAIL_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["FAIL_TO_PASS"].values[0])
+        # print (tests_PASS_TO_PASS)
+        # print (tests_FAIL_TO_PASS)
+        # fasdfa
+
+        log_path = get_log_path(log_dir, model_version, instance_id, model)
+        # print (log_path)
+        # print (os.path.exists(log_path))
+        # /home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus_round2
+        # fasfsd
+        # log_path = os.path.join(log_dir, "provided_patch", f"{instance_id}.their_provided_patch.eval.log")
+        # print (log_path)
+        log_content, result = get_model_report3(log_path=log_path)
+
+        # print (pred.keys()) 
+        
+        if ">>>>> Applied Patch (pred)" not in log_content and ">>>>> Applied Patch (PatchType.PATCH_PRED)" not in log_content:
+            groups["patch_applied_failed"].append(instance_id)
+        else:
+            report = get_tests_results(log_content, instance_id, tests_PASS_TO_PASS, tests_FAIL_TO_PASS)
+            if len(report["PASS_TO_PASS"]["failure"]) == 0 and len(report["FAIL_TO_PASS"]["failure"]) == 0:
+                groups["resolves_tests"].append(instance_id)
+            else:
+                groups["fails_tests"].append(instance_id)
+
+    # if group is empty, remove it
+    groups = {k: v for k, v in groups.items() if v}
+
+    # save the groups
+    with open(results_path, "w") as file:
+        json.dump(groups, file)
+        # print (f"Results saved to {results_path}")
+
+
+
 
 
 
@@ -196,354 +242,373 @@ models = [f.split('__')[0] for f in output_files]
 # models.append("provided_patch")
 
 
-cols = st.columns(2)
-
-with cols[0]:
-    # dropdown to select the model
-    model = st.selectbox("Select model", models)
-
-
-# # find suffixes
-# log_dirs_models = os.listdir(log_dir)
-# log_dirs_models = [f for f in log_dirs_models if model in f]
-# if len(log_dirs_models) > 1 and 'command-r' not in log_dirs_models:
-#     with cols[1]:
-#         model_version = st.selectbox("Select version", log_dirs_models)
-# else:
-#     model_version = model
-
-# print (model_version)
-
-model_version = model
-
-
-# get the model output
-output_file = output_files[models.index(model)]
-model_output_path = os.path.join(output_dir, output_file)
-# print (model_output_path)
-predictions = get_instances(model_output_path)
-
-outputs = {}
-# read jsonl file
-with open(model_output_path, "r") as file:
-    for line in file:
-        # outputs.append(json.loads(line))
-        line = json.loads(line)
-        instance_id = line["instance_id"]
-        outputs[instance_id] = line
-
-# print (len(outputs))
-# print (outputs[0].keys())
-# fdasf
-
-# for pred in predictions:
-#     instance_id = pred["instance_id"]
-#     tests_PASS_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["PASS_TO_PASS"].values[0])
-#     tests_FAIL_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["FAIL_TO_PASS"].values[0])
-#     # print (tests_PASS_TO_PASS)
-#     # print ()
-#     # print (tests_FAIL_TO_PASS)
-#     # fsdafsda
+tabs_list = ["Instances", "Results"]
+tabs = st.tabs(tabs_list)
 
 
 
+with tabs[tabs_list.index('Instances')]:
+
+
+    cols = st.columns(2)
+
+    with cols[0]:
+        # dropdown to select the model
+        model = st.selectbox("Select model", models)
+
+
+    # # find suffixes
+    # log_dirs_models = os.listdir(log_dir)
+    # log_dirs_models = [f for f in log_dirs_models if model in f]
+    # if len(log_dirs_models) > 1 and 'command-r' not in log_dirs_models:
+    #     with cols[1]:
+    #         model_version = st.selectbox("Select version", log_dirs_models)
+    # else:
+    #     model_version = model
+
+    # print (model_version)
+
+    model_version = model
+
+
+    # get the model output
+    output_file = output_files[models.index(model)]
+    model_output_path = os.path.join(output_dir, output_file)
+    # print (model_output_path)
+    predictions = get_instances(model_output_path)
+
+    outputs = {}
+    # read jsonl file
+    with open(model_output_path, "r") as file:
+        for line in file:
+            # outputs.append(json.loads(line))
+            line = json.loads(line)
+            instance_id = line["instance_id"]
+            outputs[instance_id] = line
+
+    # print (len(outputs))
+    # print (outputs[0].keys())
+    # fdasf
+
+    # for pred in predictions:
+    #     instance_id = pred["instance_id"]
+    #     tests_PASS_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["PASS_TO_PASS"].values[0])
+    #     tests_FAIL_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["FAIL_TO_PASS"].values[0])
+    #     # print (tests_PASS_TO_PASS)
+    #     # print ()
+    #     # print (tests_FAIL_TO_PASS)
+    #     # fsdafsda
 
 
 
-# # if pytest not in instance id, remove it
-# predictions = [p for p in predictions if "pytest-dev__pytest-5227" in p["instance_id"]]
 
 
-# Group the instances
-# - not generated
-# - not applied
-# - fails tests
-# - resolves tests
+
+    # # if pytest not in instance id, remove it
+    # predictions = [p for p in predictions if "pytest-dev__pytest-5227" in p["instance_id"]]
 
 
-# check if results file exists
-results_path = os.path.join(log_dir, model_version, "results.json")
-if os.path.exists(results_path):
-    print (f"Results loaded from {results_path}")
-    groups = json.load(open(results_path))
+    # Group the instances
+    # - not generated
+    # - not applied
+    # - fails tests
+    # - resolves tests
 
-else:
-    groups = {
-        # "not_generated": [],
-        "resolves_tests": [],
-        "fails_tests": [],
-        "patch_applied_failed": [],
-    }
 
-    for pred in predictions:
-        instance_id = pred["instance_id"]
-        tests_PASS_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["PASS_TO_PASS"].values[0])
-        tests_FAIL_TO_PASS = json.loads(df[df["instance_id"] == instance_id]["FAIL_TO_PASS"].values[0])
-        # print (tests_PASS_TO_PASS)
-        # print (tests_FAIL_TO_PASS)
-        # fasdfa
+    # check if results file exists
+    results_path = os.path.join(log_dir, model_version, "results.json")
+    if os.path.exists(results_path):
+        print (f"Results loaded from {results_path}")
+        groups = json.load(open(results_path))
+    else:
+        group_results(predictions, model_version, model, log_dir, results_path, df)
+
+
+
+
+
+    with cols[0]:
+        print (f"Number of predictions: {len(predictions)}")
+        # st.text(f"{len(predictions)}/{total_instances} model generated patches")
+
+        # Display counts of each group    
+        total = 0
+        for group, instances in groups.items():
+            st.text(f"{group}: {len(instances)}")
+            total += len(instances)
+        st.text(f"Total: {total}")
+
+    with cols[0]:
+        # Select the group
+        group = st.selectbox("Select task status", list(groups.keys()))
+        # Select the instance_id
+        instance_id = st.selectbox("Select instance_id", groups[group])
+
+
+
+
+
+
+
+
+
+    # fasdfsd
+
+
+    # repos = df["repo"].unique()
+    # # print (repos)
+    # # dropdown to select the repo
+    # repo = st.selectbox("Select repo", repos)
+    # df = df[df["repo"] == repo]
+    # # print (df.columns)
+    # # # first row instance_id
+    # # print (df["PASS_TO_PASS"].values[0])
+    # # print (df["FAIL_TO_PASS"].values[0])
+    # # fsda
+
+    # st.text(f"Number of instances: {len(df)}")
+
+    # # dropdown to select the instance_id
+    # instance_id = st.selectbox("Select instance_id", df["instance_id"])
+
+
+    # print (df.columns)
+
+    input_text = df[df["instance_id"] == instance_id]["text"].values[0]
+    input_text_tokens = len(input_text) / 3.4
+    # split on "</issue>\n<code>"
+    split_input_text = input_text.split("</issue>\n<code>")
+    input_text1 = split_input_text[0] + "</issue>\n"
+    input_text2 = "<code>" + split_input_text[1]
+    split_input_text2 = input_text2.split("</code>")
+    input_text2 = split_input_text2[0] + "</code>"
+    input_text2_patch = split_input_text2[1]
+
+    if "prompt" in outputs[instance_id]:
+        full_prompt = outputs[instance_id]["prompt"]
+    else:
+        full_prompt = ''
+
+
+
+    patch = df[df["instance_id"] == instance_id]["patch"].values[0]
+    # patch = df[df["instance_id"] == instance_id]["test_patch"].values[0]
+    tests_PASS_TO_PASS = df[df["instance_id"] == instance_id]["PASS_TO_PASS"].values[0]
+    tests_FAIL_TO_PASS = df[df["instance_id"] == instance_id]["FAIL_TO_PASS"].values[0]
+    tests_PASS_TO_PASS = json.loads(tests_PASS_TO_PASS)
+    tests_FAIL_TO_PASS = json.loads(tests_FAIL_TO_PASS)
+
+    # print ('tests_PASS_TO_PASS')
+    # for testname in tests_PASS_TO_PASS:
+    #     print (testname)
+    # print ('tests_FAIL_TO_PASS')
+    # for testname in tests_FAIL_TO_PASS:
+    #     print (testname)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    cols = st.columns(2)
+    with cols[0]:
+        st.markdown("<h3>Input</h3>", unsafe_allow_html=True)
+        # st.code(input_text, language="python")
+        # click to show code then it drops down
+        # st.markdown(f"""<details>
+        #             <summary>Click to show prompt</summary>
+        #             {input_text1}
+        #             </details>""", unsafe_allow_html=True)  
+        st.text(f"Number of tokens: {int(input_text_tokens):,}")
+        with st.expander("Issue", expanded=False):
+            st.markdown(input_text1, unsafe_allow_html=True)
+        with st.expander("Code", expanded=False):
+            st.code(input_text2, language="python")
+        with st.expander("Patch Prompt", expanded=False):
+            st.code(input_text2_patch, language="python")
+
+        with st.expander("Full Prompt", expanded=False):
+            st.code(full_prompt, language="python")
+
+
+
+        st.markdown("<h3>Gold Patch</h3>", unsafe_allow_html=True)
+        # html_to_display_path = "/home/chris_cohere_ai/SWE-bench-fork/display/diff.html"
+        # display the diff content
+        # with open(html_to_display_path, "r") as file:
+        #     html_to_display = file.read()
+        #     # components.html(html_to_display, scrolling=True)
+        #     components.html(html_to_display, width=800, scrolling=True)
+
+        patch = patch.replace("<patch>", "")
+        patch = patch.replace("</patch>", "")
+        # st.text()
+        formatted_diff = highlight_patch(patch)
+        components.html(formatted_diff, scrolling=True, height=500)
+
+        # st.markdown("<h3>Gold Patch</h3>", unsafe_allow_html=True)
+        # st.code(patch, language="diff")
+
+        # gold_log_path = os.path.join(log_dir, "provided_path", f"{instance_id}.their_provided_patch.log")
+        gold_log_path = os.path.join(log_dir, "provided_patch", f"{instance_id}.their_provided_patch.eval.log")
+        gold_log_content, gold_result = get_model_report3(log_path=gold_log_path)
+        # print (gold_log_path)
+
+        if ">>>>> Applied Patch (pred)" in gold_log_content:
+            display_applied_content(gold_log_content, instance_id, tests_PASS_TO_PASS, tests_FAIL_TO_PASS)
+        else:
+            st.text("Patch not applied")
+
+        st.markdown("<br><h4>Log File</h4>", unsafe_allow_html=True)
+        st.text(gold_log_content)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    with cols[1]:
+        st.markdown("<h3>Output</h3>", unsafe_allow_html=True)
+
+        # log_path = os.path.join(log_dir, f"{model_version}/{instance_id}.{model_version}.eval.log")
+        # # check if it exists
+        # if not os.path.exists(log_path):
+        #     # v2
+        #     log_path = os.path.join(log_dir, model_version, f"{instance_id}.{model}.log")
+
+        #     if "provided_patch" in model_version:
+        #         log_path = os.path.join(log_dir, model_version, f"{instance_id}.their_provided_patch.log")
 
         log_path = get_log_path(log_dir, model_version, instance_id, model)
-        # print (log_path)
-        # print (os.path.exists(log_path))
-        # /home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus_round2
-        # fasfsd
-        # log_path = os.path.join(log_dir, "provided_patch", f"{instance_id}.their_provided_patch.eval.log")
-        # print (log_path)
+
+        # # get the model output for the selected instance_id
+        # print (predictions[0].keys())
+        prediction = None
+        for pred in predictions:
+            if pred["instance_id"] == instance_id:
+                prediction = pred
+                break
+        if prediction is None:
+            st.text("No prediction found")
+            st.stop()
+
+        if "full_output" in prediction:
+
+            output_text_tokens = len(prediction['full_output']) / 3.4
+            st.text(f"Number of tokens: {int(output_text_tokens):,}")
+
+            with st.expander("Full Output", expanded=False):
+                # st.markdown(f"{prediction['full_output']}", unsafe_allow_html=True)
+                st.code(f"{prediction['full_output']}")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<h3>Model Generated Patch</h3>", unsafe_allow_html=True)
+        # with st.expander("Patch", expanded=False):
+        formatted_diff = highlight_patch(prediction["model_patch"])
+        # st.code(formatted_diff, language="diff")
+        components.html(formatted_diff, scrolling=True, height=500)
+
+
+
+        st.markdown("<h3>Tests</h3>", unsafe_allow_html=True)
         log_content, result = get_model_report3(log_path=log_path)
 
-        # print (pred.keys()) 
-        
         if ">>>>> Applied Patch (pred)" not in log_content and ">>>>> Applied Patch (PatchType.PATCH_PRED)" not in log_content:
-            groups["patch_applied_failed"].append(instance_id)
+            st.text("Patch not applied")
         else:
-            report = get_tests_results(log_content, instance_id, tests_PASS_TO_PASS, tests_FAIL_TO_PASS)
-            if len(report["PASS_TO_PASS"]["failure"]) == 0 and len(report["FAIL_TO_PASS"]["failure"]) == 0:
-                groups["resolves_tests"].append(instance_id)
+            display_applied_content(log_content, instance_id, tests_PASS_TO_PASS, tests_FAIL_TO_PASS)
+            
+
+        st.markdown("<br><h4>Log File</h4>", unsafe_allow_html=True)
+        st.text(log_content)
+
+
+
+
+
+
+with tabs[tabs_list.index('Results')]:
+    
+    test_instances_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc.json"
+    test_instances = json.load(open(test_instances_path))
+    st.text(len(test_instances))
+
+    # get results for each model
+    my_models = ['command-r', 'command-r-plus', 'command-r-plus_agent3']
+    results = {}
+    for model in my_models:
+        results_path = os.path.join(log_dir, model, "results.json")
+        if not os.path.exists(results_path):
+            group_results(predictions, model_version, model, log_dir, results_path, df)
+
+        groups = json.load(open(results_path))
+
+        # Filter out instances not in test_instances
+        groups2 = {}
+        for group, instances in groups.items():
+            groups2[group] = [i for i in instances if i in test_instances]
+
+        # Display counts of each group    
+        total = 0
+        for group, instances in groups2.items():
+            # st.text(f"{group}: {len(instances)}")
+            total += len(instances)
+        st.text(f"{model} Total: {total}")
+        results[model] = groups2
+    
+    # Convert results to group: model: count
+    group_options = ["resolves_tests", "fails_tests", "patch_applied_failed"]
+    results2 = {}
+    for model, groups in results.items():
+        for group in group_options:
+            if group not in results2:
+                results2[group] = {}
+            if group not in groups:
+                results2[group][model] = 0
             else:
-                groups["fails_tests"].append(instance_id)
-
-    # if group is empty, remove it
-    groups = {k: v for k, v in groups.items() if v}
-
-    # save the groups
-    with open(results_path, "w") as file:
-        json.dump(groups, file)
-        # print (f"Results saved to {results_path}")
-
-
-
-
-
-
-
-
-with cols[0]:
-    print (f"Number of predictions: {len(predictions)}")
-    # st.text(f"{len(predictions)}/{total_instances} model generated patches")
-
-    # Display counts of each group    
-    total = 0
-    for group, instances in groups.items():
-        st.text(f"{group}: {len(instances)}")
-        total += len(instances)
-    st.text(f"Total: {total}")
-
-with cols[0]:
-    # Select the group
-    group = st.selectbox("Select task status", list(groups.keys()))
-    # Select the instance_id
-    instance_id = st.selectbox("Select instance_id", groups[group])
-
-
-
-
-
-
-
-
-
-# fasdfsd
-
-
-# repos = df["repo"].unique()
-# # print (repos)
-# # dropdown to select the repo
-# repo = st.selectbox("Select repo", repos)
-# df = df[df["repo"] == repo]
-# # print (df.columns)
-# # # first row instance_id
-# # print (df["PASS_TO_PASS"].values[0])
-# # print (df["FAIL_TO_PASS"].values[0])
-# # fsda
-
-# st.text(f"Number of instances: {len(df)}")
-
-# # dropdown to select the instance_id
-# instance_id = st.selectbox("Select instance_id", df["instance_id"])
-
-
-# print (df.columns)
-
-input_text = df[df["instance_id"] == instance_id]["text"].values[0]
-input_text_tokens = len(input_text) / 3.4
-# split on "</issue>\n<code>"
-split_input_text = input_text.split("</issue>\n<code>")
-input_text1 = split_input_text[0] + "</issue>\n"
-input_text2 = "<code>" + split_input_text[1]
-split_input_text2 = input_text2.split("</code>")
-input_text2 = split_input_text2[0] + "</code>"
-input_text2_patch = split_input_text2[1]
-
-if "prompt" in outputs[instance_id]:
-    full_prompt = outputs[instance_id]["prompt"]
-else:
-    full_prompt = ''
-
-
-
-patch = df[df["instance_id"] == instance_id]["patch"].values[0]
-# patch = df[df["instance_id"] == instance_id]["test_patch"].values[0]
-tests_PASS_TO_PASS = df[df["instance_id"] == instance_id]["PASS_TO_PASS"].values[0]
-tests_FAIL_TO_PASS = df[df["instance_id"] == instance_id]["FAIL_TO_PASS"].values[0]
-tests_PASS_TO_PASS = json.loads(tests_PASS_TO_PASS)
-tests_FAIL_TO_PASS = json.loads(tests_FAIL_TO_PASS)
-
-# print ('tests_PASS_TO_PASS')
-# for testname in tests_PASS_TO_PASS:
-#     print (testname)
-# print ('tests_FAIL_TO_PASS')
-# for testname in tests_FAIL_TO_PASS:
-#     print (testname)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-cols = st.columns(2)
-with cols[0]:
-    st.markdown("<h3>Input</h3>", unsafe_allow_html=True)
-    # st.code(input_text, language="python")
-    # click to show code then it drops down
-    # st.markdown(f"""<details>
-    #             <summary>Click to show prompt</summary>
-    #             {input_text1}
-    #             </details>""", unsafe_allow_html=True)  
-    st.text(f"Number of tokens: {int(input_text_tokens):,}")
-    with st.expander("Issue", expanded=False):
-        st.markdown(input_text1, unsafe_allow_html=True)
-    with st.expander("Code", expanded=False):
-        st.code(input_text2, language="python")
-    with st.expander("Patch Prompt", expanded=False):
-        st.code(input_text2_patch, language="python")
-
-    with st.expander("Full Prompt", expanded=False):
-        st.code(full_prompt, language="python")
-
-
-
-    st.markdown("<h3>Gold Patch</h3>", unsafe_allow_html=True)
-    # html_to_display_path = "/home/chris_cohere_ai/SWE-bench-fork/display/diff.html"
-    # display the diff content
-    # with open(html_to_display_path, "r") as file:
-    #     html_to_display = file.read()
-    #     # components.html(html_to_display, scrolling=True)
-    #     components.html(html_to_display, width=800, scrolling=True)
-
-    patch = patch.replace("<patch>", "")
-    patch = patch.replace("</patch>", "")
-    # st.text()
-    formatted_diff = highlight_patch(patch)
-    components.html(formatted_diff, scrolling=True, height=500)
-
-    # st.markdown("<h3>Gold Patch</h3>", unsafe_allow_html=True)
-    # st.code(patch, language="diff")
-
-    # gold_log_path = os.path.join(log_dir, "provided_path", f"{instance_id}.their_provided_patch.log")
-    gold_log_path = os.path.join(log_dir, "provided_patch", f"{instance_id}.their_provided_patch.eval.log")
-    gold_log_content, gold_result = get_model_report3(log_path=gold_log_path)
-    # print (gold_log_path)
-
-    if ">>>>> Applied Patch (pred)" in gold_log_content:
-        display_applied_content(gold_log_content, instance_id, tests_PASS_TO_PASS, tests_FAIL_TO_PASS)
-    else:
-        st.text("Patch not applied")
-
-    st.markdown("<br><h4>Log File</h4>", unsafe_allow_html=True)
-    st.text(gold_log_content)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-with cols[1]:
-    st.markdown("<h3>Output</h3>", unsafe_allow_html=True)
-
-    # log_path = os.path.join(log_dir, f"{model_version}/{instance_id}.{model_version}.eval.log")
-    # # check if it exists
-    # if not os.path.exists(log_path):
-    #     # v2
-    #     log_path = os.path.join(log_dir, model_version, f"{instance_id}.{model}.log")
-
-    #     if "provided_patch" in model_version:
-    #         log_path = os.path.join(log_dir, model_version, f"{instance_id}.their_provided_patch.log")
-
-    log_path = get_log_path(log_dir, model_version, instance_id, model)
-
-    # # get the model output for the selected instance_id
-    # print (predictions[0].keys())
-    prediction = None
-    for pred in predictions:
-        if pred["instance_id"] == instance_id:
-            prediction = pred
-            break
-    if prediction is None:
-        st.text("No prediction found")
-        st.stop()
-
-    if "full_output" in prediction:
-
-        output_text_tokens = len(prediction['full_output']) / 3.4
-        st.text(f"Number of tokens: {int(output_text_tokens):,}")
-
-        with st.expander("Full Output", expanded=False):
-            # st.markdown(f"{prediction['full_output']}", unsafe_allow_html=True)
-            st.code(f"{prediction['full_output']}")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<h3>Model Generated Patch</h3>", unsafe_allow_html=True)
-    # with st.expander("Patch", expanded=False):
-    formatted_diff = highlight_patch(prediction["model_patch"])
-    # st.code(formatted_diff, language="diff")
-    components.html(formatted_diff, scrolling=True, height=500)
-
-
-
-    st.markdown("<h3>Tests</h3>", unsafe_allow_html=True)
-    log_content, result = get_model_report3(log_path=log_path)
-
-    if ">>>>> Applied Patch (pred)" not in log_content and ">>>>> Applied Patch (PatchType.PATCH_PRED)" not in log_content:
-        st.text("Patch not applied")
-    else:
-        display_applied_content(log_content, instance_id, tests_PASS_TO_PASS, tests_FAIL_TO_PASS)
-        
-
-    st.markdown("<br><h4>Log File</h4>", unsafe_allow_html=True)
-    st.text(log_content)
+                results2[group][model] = len(groups[group])
+
+        # for group, instances in groups.items():
+        #     if group not in results2:
+        #         results2[group] = {}
+        #     results2[group][model] = len(instances)
+    
+    print (results2)
+
+    # Table to display results
+    st.table(results2)

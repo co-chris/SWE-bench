@@ -2,6 +2,8 @@
 
 """
 python -m inference.run_api2
+
+
 python inference/run_api2.py because of how things get imported...fixed it.. 
 python -m inference.run_api2 --dataset_name_or_path /home/chris_cohere_ai/SWE-bench-stuff/tasks/test_set/swe-bench.json --model_name_or_path command-r --output_dir /home/chris_cohere_ai/SWE-bench-stuff/outputs
 
@@ -11,27 +13,28 @@ It sorts instances by length and continually writes the outputs to a specified f
 
 import json
 import os
-import time
-import dotenv
-import traceback
+import datetime
+# import time
+# import dotenv
+# import traceback
 from pathlib import Path
 from tqdm.auto import tqdm
 import numpy as np
-import openai
-import tiktoken
-from anthropic import HUMAN_PROMPT, AI_PROMPT, Anthropic
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_random_exponential,
-)
+# import openai
+# import tiktoken
+# from anthropic import HUMAN_PROMPT, AI_PROMPT, Anthropic
+# from tenacity import (
+#     retry,
+#     stop_after_attempt,
+#     wait_random_exponential,
+# )
 from datasets import load_dataset, load_from_disk
 
 from argparse import ArgumentParser
 import logging
 
 
-from inference.run_api import MODEL_LIMITS, parse_model_args, openai_inference, anthropic_inference
+# from inference.run_api import MODEL_LIMITS, parse_model_args, openai_inference, anthropic_inference
 from inference.make_datasets.utils import extract_diff
 
 from swebench.harness.colours import blue
@@ -43,6 +46,8 @@ import cohere
 # import sys
 # sys.path.insert(0, '.')
 from display.utils import get_model_report3, get_tests_results, get_log_path
+
+from inference.cohere_samplers import cohere_inference
 
 
 # logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -57,71 +62,89 @@ logging.getLogger().setLevel(logging.WARNING)
 
 
 
+def filter_examples(dataset, output_file, max_length, past_output, past_logs):
+
+    # Convert dataset to dict where key is instance_id
+    dataset2 = {}
+    for i in range(len(dataset)):
+        dataset2[dataset[i]['instance_id']] = dataset[i]
+    print (f'Original dataset length: {len(dataset2)}\n')
+
+    # Only keep instances that gold patch solves and are less than 40k tokens, 818 of them
+    test_instances_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc.json"
+    test_instances = json.load(open(test_instances_path))
+    dataset2 = {k: v for k, v in dataset2.items() if k in test_instances}
+    print (f"Filtered to {blue(len(dataset2))}: solved by gold and less than 40k tokens\n")
 
 
 
-
-
-
-
-
-def cohere_inference(
-    test_dataset,
-    model_name_or_path,
-    max_length,
-    output_file,
-    past_output,
-    past_logs
-):
+    # Filter out existing ids
+    # if len(existing_ids) > 0:
+    #     dataset = dataset.filter(
+    #         lambda x: x["instance_id"] not in existing_ids,
+    #         desc="Filtering out existing ids",
+    #         load_from_cache_file=False,
+    #     )
     
-    print (f'Original dataset length: {len(test_dataset)}\n')
+    
+    # if not overwrite and output_file.exists():
+    if output_file.exists():
+        existing_ids = set()
+        with open(output_file) as f:
+            for line in f:
+                data = json.loads(line)
+                instance_id = data["instance_id"]
+                existing_ids.add(instance_id)
+        print(f"Read {blue(len(existing_ids))} already completed ids from {output_file}")
 
-    # Resolved instances that gold patch cant solve
-    print ('Resolved instances that gold patch cant solve')
-    gold_resolved_path = "/home/chris_cohere_ai/SWE-bench-stuff/tasks/resolved_instances/swe-bench-oracle-resolved.json"
-    with open(gold_resolved_path, "r") as f:
-        resolved_instances = json.load(f)
-    print (len(resolved_instances))
-    datapoints = {}
-    for i in range(len(test_dataset)):
-        # print (test_dataset[i]['instance_id'])
-        if test_dataset[i]['instance_id'] in resolved_instances:
-            # print ('resolved')
-            datapoints[test_dataset[i]['instance_id']] = test_dataset[i]
-    print (len(datapoints))
-    # print (datapoints[0].keys())
-    instance_ids_todo = list(datapoints.keys())
+        dataset2 = {k: v for k, v in dataset2.items() if k not in existing_ids}
+        print(f"Filtered to {blue(len(dataset))}, already generated instances\n")
 
 
-
-
-    # Remove instances that have already been solved
-    print ('Remove instances that have already been solved')
-    datapoints2 = {}
-    for log_file in os.listdir(past_logs):
-        instance_id = log_file.split(".")[0]
-        if instance_id not in instance_ids_todo:
-            continue
-
-        tests_PASS_TO_PASS = datapoints[instance_id]["PASS_TO_PASS"]
-        tests_FAIL_TO_PASS = datapoints[instance_id]["FAIL_TO_PASS"]
-        log_path = os.path.join(past_logs, log_file)
-
-        log_content, result = get_model_report3(log_path=log_path)
-        report = get_tests_results(log_content, instance_id, tests_PASS_TO_PASS, tests_FAIL_TO_PASS)
-        if len(report["PASS_TO_PASS"]["failure"]) > 0 or len(report["FAIL_TO_PASS"]["failure"]) > 0:
-            datapoints2[instance_id] = datapoints[instance_id]
-        else:
-            print ('heheheheh')
-
-        datapoints2[instance_id]['log_content'] = log_content
-            
-    print (len(datapoints2))
-
+    # # Resolved instances that gold patch cant solve
+    # print ('Resolved instances that gold patch cant solve')
+    # gold_resolved_path = "/home/chris_cohere_ai/SWE-bench-stuff/tasks/resolved_instances/swe-bench-oracle-resolved.json"
+    # with open(gold_resolved_path, "r") as f:
+    #     resolved_instances = json.load(f)
+    # print (len(resolved_instances))
+    # datapoints = {}
+    # for i in range(len(test_dataset)):
+    #     # print (test_dataset[i]['instance_id'])
+    #     if test_dataset[i]['instance_id'] in resolved_instances:
+    #         # print ('resolved')
+    #         datapoints[test_dataset[i]['instance_id']] = test_dataset[i]
+    # print (len(datapoints))
+    # # print (datapoints[0].keys())
+    # instance_ids_todo = list(datapoints.keys())
 
 
 
     if past_output:
+        # Remove instances that have already been solved
+        print ('Remove instances that have already been solved')
+        datapoints2 = {}
+        for log_file in os.listdir(past_logs):
+            instance_id = log_file.split(".")[0]
+            if instance_id not in instance_ids_todo:
+                continue
+
+            tests_PASS_TO_PASS = datapoints[instance_id]["PASS_TO_PASS"]
+            tests_FAIL_TO_PASS = datapoints[instance_id]["FAIL_TO_PASS"]
+            log_path = os.path.join(past_logs, log_file)
+
+            log_content, result = get_model_report3(log_path=log_path)
+            report = get_tests_results(log_content, instance_id, tests_PASS_TO_PASS, tests_FAIL_TO_PASS)
+            if len(report["PASS_TO_PASS"]["failure"]) > 0 or len(report["FAIL_TO_PASS"]["failure"]) > 0:
+                datapoints2[instance_id] = datapoints[instance_id]
+            else:
+                print ('heheheheh')
+
+            datapoints2[instance_id]['log_content'] = log_content
+                
+        print (len(datapoints2))
+
+
+
         # Collect previous outputs
         print ('Collect previous outputs')
         with open(past_output, "r") as f:
@@ -151,18 +174,32 @@ def cohere_inference(
             # print (prompt)
             # fdsaf
 
+    else:
+        datapoints2 = {}
+        for instance_id, datapoint in datapoints.items():
+            datapoint["prompt"] = datapoint["text"]
+            datapoints2[instance_id] = datapoint
 
 
+    # co = cohere.Client(os.environ['COHERE_API_KEY'])
+    # response = co.tokenize(text="tokenize me! :D", model="command")  # optional
+    # print(len(response.tokens))
 
 
     # Remove instances that are too long
-    print ('Remove instances that are too long')
+    # For agent model, it can become too long..need better fix. .
+    # print ('Remove instances that are too long')
     datapoints = []
     for instance_id, datapoint in datapoints2.items():
-        if len(datapoint["prompt"]) <= max_length * 3.4:
-            # datapoints[instance_id] = datapoint
+        # prompt_len = len(co.tokenize(text=datapoint["prompt"], model="command").tokens)
+        # if prompt_len <= max_length-3:
+        if len(datapoint["prompt"]) <= max_length * 3:
             datapoints.append(datapoint)
-    print (len(datapoints))
+    # print (len(datapoints))
+    print (f"Filtered to {blue(len(datapoints))} instances due to length\n")
+    # fadsfsd
+
+
 
     # cohere_tokenize = lambda x: len(x) / 3.4
     # test_dataset = test_dataset.filter(
@@ -174,52 +211,41 @@ def cohere_inference(
 
     # prompts = [datum['text'] for datum in test_dataset]
     # fasdafsd
+    return datapoints2
 
 
 
-    def get_responses(client, model_name, datapoint):
-        prompt = datapoint["prompt"]
-        response = client.chat(
-            message=prompt,
-            temperature=0,
-            model=model_name,
-        )
-        return response.__dict__
+def show_some_outputs(output_file):
+    # Load output file
+    if output_file.exists():
+        with open(output_file, "r") as f:
+            for i, line in enumerate(f):
 
-    api_key = os.environ.get("COHERE_API_KEY", None)
-    cohere_client = cohere.Client(api_key)
-    # set the client to the cohere client
-    get_responses_cohere = lambda x: get_responses(cohere_client, model_name_or_path, x)
+                data = json.loads(line)
+                # if "</patch>" not in data['full_output']:
+                if 1:
+                    # print (data.keys())
 
-    n_datapoints = len(datapoints)
-    batch_size = 8
-    # batch = []
-    batch = []
-    for i in tqdm(range(n_datapoints)):
+                    print(f"\n\nInstance {blue(i)}")
+                    # print(f"Instance ID: {data['instance_id']}")
+                    # print(f"Prompt:\n{data['prompt']}")
+                    # print ('---')
+                    # print(f"Model output: {data['model_patch']}")
+                    # print(f"Model: {data['model_name_or_path']}")
+                    # print(f"Model path: {data['model_path']}")
+                    print(f"Full output:\n{data['full_output']}")
+                    print (blue(len(data['full_output']) // 3))
+                    print ('-----------------------------------------')
+                    print()
 
-        # batch.append(test_dataset[i])
-        batch.append(datapoints[i])
-        if len(batch) == batch_size or i == n_datapoints-1:
-            # text_batch = [datum['text'] for datum in batch]
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                responses = list(executor.map(get_responses_cohere, batch))
 
-            for datum, response in zip(batch, responses):
-                completion = response['text']
-                # print (response.keys())
-                output_dict = {
-                    "instance_id": datum["instance_id"], 
-                    "model_name_or_path": model_name_or_path,
-                    "prompt": datum["prompt"],
-                    "full_output": completion,
-                    "model_patch": extract_diff(completion),
-                }
 
-                with open(output_file, "a+") as f:
-                    f.write(json.dumps(output_dict) + "\n")
-            batch = []
 
-            # break
+
+
+
+
+
 
 
 
@@ -243,12 +269,13 @@ def cohere_inference(
 
 def main(
     dataset_name_or_path,
-    model_name_or_path,
-    model_name_suffix,
+    run_name,
+    model_path,
     max_length,
     output_dir,
     past_output,
     past_logs,
+    overwrite
 ):
     # if shard_id is None and num_shards is not None:
     #     logger.warning(
@@ -267,23 +294,20 @@ def main(
 
     split = 'test'
 
-    model_nickname = model_name_or_path + model_name_suffix
-    output_file = f"{model_nickname}__{dataset_name_or_path.split('/')[-1]}__{split}"
-    # if shard_id is not None and num_shards is not None:
-    #     output_file += f"__shard-{shard_id}__num_shards-{num_shards}"
+    # model_nickname = model_name + model_name_suffix
+    output_file = f"{run_name}__{dataset_name_or_path.split('/')[-1]}__{split}"
     output_file = Path(output_dir, output_file + ".jsonl")
     print(f"\nWill write to\n {blue(output_file)}\n")
-    existing_ids = set()
-    if os.path.exists(output_file):
-        # # TODO: dont redo the ones already done.
-        # exit()
-        with open(output_file) as f:
-            for line in f:
-                data = json.loads(line)
-                instance_id = data["instance_id"]
-                existing_ids.add(instance_id)
-    print(f"Read {blue(len(existing_ids))} already completed ids from {output_file}")
 
+    show_outputs = 0
+    if show_outputs:
+        show_some_outputs(output_file)
+        quit()
+
+    # if it exists, remove file
+    if overwrite and output_file.exists():
+        output_file.unlink()
+        print(f"Removed existing file {output_file}")
 
 
     # Load dataset
@@ -305,24 +329,23 @@ def main(
     print ()
     
 
+    datapoints = filter_examples(dataset, output_file, max_length, past_output, past_logs)
 
-    # Filter out existing ids
-    if len(existing_ids) > 0:
-        dataset = dataset.filter(
-            lambda x: x["instance_id"] not in existing_ids,
-            desc="Filtering out existing ids",
-            load_from_cache_file=False,
-        )
-    print(f"Filtered to {blue(len(dataset))} instances\n")
+    # instance_ids = [datum["instance_id"] for datum in datapoints]
+    # print (instance_ids[:5])
+    # instance_ids_output_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc.json"
+    # # make dir if doesnt exist
+    # os.makedirs(os.path.dirname(instance_ids_output_path), exist_ok=True)
 
+    # with open(instance_ids_output_path, "w") as f:
+    #     json.dump(instance_ids, f)
+    # print (f"Saved to {instance_ids_output_path}")
+    # fdsafs
 
     cohere_inference(
-            test_dataset=dataset,
-            model_name_or_path=model_name_or_path,
-            max_length=max_length,
+            datapoints=datapoints,
+            model_path=model_path,
             output_file=output_file,
-            past_output=past_output,
-            past_logs=past_logs
     )
 
     # if model_name_or_path.startswith("claude"):
@@ -354,13 +377,16 @@ if __name__ == "__main__":
     python -m inference.run_api2
     """
 
+    # Get date in this format 2024_04_22
+    date = datetime.datetime.now().strftime("%Y_%m_%d")
+    # print (date)
+    # fsdf
+
+
     # dataset_name_or_path = "/home/chris_cohere_ai/SWE-bench-stuff/tasks/test_set/swe-bench.json"
     # dataset_name_or_path = "/home/chris_cohere_ai/.cache/huggingface/datasets/princeton-nlp___swe-bench/"
     # dataset_name_or_path = "princeton-nlp/SWE-bench"
-    dataset_name_or_path = "princeton-nlp/SWE-bench_oracle"
-    
-    
-    output_dir = "/home/chris_cohere_ai/SWE-bench-stuff/outputs"
+
     # model_name = "command-r"
     # model_name = "command-r-plus"
      #-round2"
@@ -378,21 +404,45 @@ if __name__ == "__main__":
     # past_logs = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus_agent2"
 
 
-    model_name = "finetuned_35B"
-    model_name_suffix = ""
+    # model_name = "finetuned_35B"
+    # model_path = "100.96.123.96:8000"
+    # model_name_suffix = ""
+    # past_output = ""
+    # past_logs = ""
+    # max_length = 40000
+    # overwrite = True
+
+
+    # model_name = "test"
+    # model_path = "100.96.123.96:8000"
+    # model_name_suffix = ""
+    # past_output = ""
+    # past_logs = ""
+    # max_length = 40000
+    # overwrite = True
+
+
+
+
+    run_name = f"command-r-plus_{date}"
+    model_path = "command-r-plus"
     past_output = ""
     past_logs = ""
     max_length = 40000
+    overwrite = True
 
 
+    dataset_name_or_path = "princeton-nlp/SWE-bench_oracle"
+    output_dir = "/home/chris_cohere_ai/SWE-bench-stuff/outputs"
 
     main(dataset_name_or_path,
-            model_name,
-            model_name_suffix,
+            run_name,
+            model_path,
             max_length,
             output_dir,
             past_output,
-            past_logs)
+            past_logs,
+            overwrite)
 
 
 
