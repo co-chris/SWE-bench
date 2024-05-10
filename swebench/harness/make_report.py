@@ -115,6 +115,9 @@ def get_model_report2(predictions_path, log_dir):
         # if repo not in report_map:
         #     report_map[repo] = {k: [] for k in keys}
 
+        print (p.keys())
+        fsda
+
         # Check if the model patch exists
         if p["model_patch"] == None:
             report_map["model_patch_does_not_exist"].append(instance_id)
@@ -186,11 +189,11 @@ def get_model_report2(predictions_path, log_dir):
         repo = instance_id.split(".")[0].rsplit("-", 1)[0].replace("__", "/")
         log_parser = MAP_REPO_TO_PARSER[repo]
         tests_statuses = log_parser(passed_content)
-        print (blue(tests_statuses))
+        # print (blue(tests_statuses))
         # fasdf
         expected_statuses = eval_refs[instance_id]
-        print ('expected_statuses')
-        print (expected_statuses)
+        # print ('expected_statuses')
+        # print (expected_statuses)
         # continue
 
         report = get_eval_report(tests_statuses, expected_statuses)
@@ -221,11 +224,15 @@ def get_model_report2(predictions_path, log_dir):
             print (log_content)
             print (blue('-------------------------'))
 
-            print (report["PASS_TO_PASS"]["success"])
-            print (report["FAIL_TO_PASS"]["success"])
-            print (report["PASS_TO_PASS"]["failure"])
-            print (report["FAIL_TO_PASS"]["failure"])
-            fads
+            # print ('test_empty_qs_union_with_ordered_qs' in log_content)
+
+            # print (report["PASS_TO_PASS"]["success"])
+            # print (report["FAIL_TO_PASS"]["success"])
+            # print ()
+            # print ('fail')
+            # print (report["PASS_TO_PASS"]["failure"])
+            # print (report["FAIL_TO_PASS"]["failure"])
+        #     fads
 
     return report_map
 
@@ -274,15 +281,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     # parser.add_argument("--model", type=str, help="Model name", required=True)
     parser.add_argument("--predictions_path", type=str, help="Path to predictions file (must be .json)", required=True)
-    # parser.add_argument("--log_dir", type=str, help="Path to log directory", required=True)
+    parser.add_argument("--log_dir", type=str, help="Path to log directory", required=True)
     # parser.add_argument("--swe_bench_tasks", type=str, help="Path to dataset file or HF datasets name", required=True)
     # parser.add_argument("--log_suffix", type=str, help="(Optional) Suffix to append to log file names", default=None)
     args = parser.parse_args()
 
-    log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/provided_patch_2024_05_09"
+    # log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/provided_patch_2024_05_09"
 
     # report = get_model_report2(args.model, args.predictions_path, args.swe_bench_tasks, args.log_dir, args.log_suffix)
-    report = get_model_report2(args.predictions_path, log_dir)
+    report = get_model_report2(args.predictions_path, args.log_dir)
     keys = list(report.keys())
     for k in keys:
         print (f"{k}: {len(report[k])}")

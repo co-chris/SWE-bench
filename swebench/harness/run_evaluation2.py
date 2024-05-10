@@ -107,7 +107,7 @@ def main(
     # add log file
     for p in predictions:
         # log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p['model_name_or_path']}.log")
-        log_file = os.path.join(model_log_dir, f"{p["instance_id"]}.log")
+        log_file = os.path.join(model_log_dir, f"{p['instance_id']}.log")
         p["log_file"] = log_file
 
     # remove ones that are already done
@@ -271,6 +271,7 @@ def main(
 
         # Delete testbed_model_dir
         # shutil.rmtree(testbed_model_dir, ignore_errors=True)
+        print (model_log_dir)
         print ("done")
 
 

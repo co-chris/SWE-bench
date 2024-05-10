@@ -22,6 +22,7 @@ print (f"Number of instances: {total_instances}")
 # print
 
 for instance in dataset:
-    print (instance.keys())
-    print (instance['test_patch'])
-    break
+    if instance['instance_id'] == 'sympy__sympy-13878':
+        print (instance.keys())
+        print (instance['test_patch'])
+        break

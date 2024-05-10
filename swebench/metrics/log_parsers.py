@@ -72,19 +72,22 @@ def parse_log_django(log: str) -> dict:
         if line.endswith(" ... ok"):
             test = line.split(" ... ok")[0]
             test_status_map[test] = TestStatus.PASSED.value
-        if " ... skipped" in line:
+        elif line.endswith(" ... System check identified no issues (1 silenced)."):
+            test = line.split(" ... System check identified no issues (1 silenced).")[0]
+            test_status_map[test] = TestStatus.PASSED.value
+        elif " ... skipped" in line:
             test = line.split(" ... skipped")[0]
             test_status_map[test] = TestStatus.SKIPPED.value
-        if line.endswith(" ... FAIL"):
+        elif line.endswith(" ... FAIL"):
             test = line.split(" ... FAIL")[0]
             test_status_map[test] = TestStatus.FAILED.value
-        if line.startswith("FAIL:"):
+        elif line.startswith("FAIL:"):
             test = line.split()[1].strip()
             test_status_map[test] = TestStatus.FAILED.value
-        if line.endswith(" ... ERROR"):
+        elif line.endswith(" ... ERROR"):
             test = line.split(" ... ERROR")[0]
             test_status_map[test] = TestStatus.ERROR.value
-        if line.startswith("ERROR:"):
+        elif line.startswith("ERROR:"):
             test = line.split()[1].strip()
             test_status_map[test] = TestStatus.ERROR.value
     return test_status_map
