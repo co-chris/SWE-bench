@@ -237,7 +237,7 @@ def generate_completions(prompt, model, n_completions):
 
     batch = [prompt] * n_completions
 
-    if model == "command-r" or "command-r-plus":
+    if model in ["command-r", "command-r-plus"]:
         # Prod
         api_key = os.environ.get("COHERE_API_KEY", None)
         cohere_client = cohere.Client(api_key)
