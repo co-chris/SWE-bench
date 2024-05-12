@@ -69,7 +69,8 @@ def main(
     tasks = list(get_eval_refs(swe_bench_tasks).values())
     log_suffix = log_suffix if log_suffix is not None else ""
 
-
+    # print (len(tasks))
+    # fasdf
 
     # model_name = predictions_path.split("/")[-1].split("__")[0]
     run_name = predictions_path.split("/")[-1].split("__")[0].split('.')[0]
@@ -92,16 +93,16 @@ def main(
     print ('Loading predictions')
     predictions = get_instances(predictions_path)
     
-
-    # Only keep instances that gold patch solves AND are less than 40k tokens, 818 of them
-    test_instances_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc_750.json"
-    test_instances = json.load(open(test_instances_path))
-    predictions_todo = []
-    for p in predictions:
-        if p["instance_id"] in test_instances:
-            predictions_todo.append(p)
-    predictions = predictions_todo
-    print (f"Filtered to {blue(len(predictions))}: solved by gold and less than max_length tokens")
+    if 'train_set_patches' not in run_name:
+        # Only keep instances that gold patch solves AND are less than 40k tokens, 818 of them
+        test_instances_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc_750.json"
+        test_instances = json.load(open(test_instances_path))
+        predictions_todo = []
+        for p in predictions:
+            if p["instance_id"] in test_instances:
+                predictions_todo.append(p)
+        predictions = predictions_todo
+        print (f"Filtered to {blue(len(predictions))}: solved by gold and less than max_length tokens")
     n_all_preds = len(predictions)
 
     # add log file
@@ -240,6 +241,12 @@ def main(
     print ("########################################")
 
 
+    # print all repos
+    for repo in map_repo_version_to_predictions:
+        print (repo)
+    fsd
+
+
 
     # task = {
     #     "task_instances": predictions,
@@ -250,6 +257,10 @@ def main(
     # if args.num_workers == 1:
     # setup_testbed(task)
 
+    for eval_arg in eval_args:
+        setup_testbed(eval_arg)
+
+    fadsfsd
     try:
         # if num_processes == 1:
         #     for args in eval_args:

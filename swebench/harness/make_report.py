@@ -115,14 +115,14 @@ def get_model_report2(predictions_path, log_dir):
         # if repo not in report_map:
         #     report_map[repo] = {k: [] for k in keys}
 
-        print (p.keys())
-        fsda
+        # print (p.keys())
+        # fsda
 
-        # Check if the model patch exists
-        if p["model_patch"] == None:
-            report_map["model_patch_does_not_exist"].append(instance_id)
-            continue
-        report_map["model_patch_exists"].append(instance_id)
+        # # Check if the model patch exists
+        # if p["model_patch"] == None:
+        #     report_map["model_patch_does_not_exist"].append(instance_id)
+        #     continue
+        # report_map["model_patch_exists"].append(instance_id)
 
         # Get log file
         # log_path = os.path.join(log_dir, f"{model}/{instance_id}.{model}.eval.log")
@@ -219,10 +219,10 @@ def get_model_report2(predictions_path, log_dir):
         if get_resolution_status(report) == ResolvedStatus.FULL.value:
             report_map["resolved"].append(instance_id)
             # print (f"Resolved: {instance_id}")
-        else:
-            print (blue('-------------------------'))
-            print (log_content)
-            print (blue('-------------------------'))
+        # else:
+            # print (blue('-------------------------'))
+            # print (log_content)
+            # print (blue('-------------------------'))
 
             # print ('test_empty_qs_union_with_ordered_qs' in log_content)
 

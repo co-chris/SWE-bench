@@ -30,6 +30,8 @@ def show_some_outputs(output_file):
             #     continue
 
             data = json.loads(line)
+            print (data.keys())
+            fdsaf
             full_output = data['full_output']
 
             total += 1

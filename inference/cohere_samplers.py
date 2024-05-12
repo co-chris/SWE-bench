@@ -45,13 +45,14 @@ class Fax_Sampler():
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(None)) as sess:
             responses = await self.raw_sample_request(sess, queries)
             try:
+                print (responses[0].keys())
                 completions = [resp['completions'][0] for resp in responses]
             except Exception as e:
                 print (responses)
                 raise e
             return completions
 
-    def sample(self, prompt_list, n_completions, temp): #, total_tokens=None):
+    def sample(self, prompt_list, temp):
         """
         Pass in a list of prompts and get back df where each completion is a row
         """
@@ -74,7 +75,7 @@ class Fax_Sampler():
         df = pd.DataFrame({"prompt": prompt_list})
         df["prompt"] = df.prompt
         df["temperature"] = temp
-        df["n_completions"] = n_completions
+        df["n_completions"] = 1 # n_completions
         df["truncate"] = "START"# "NONE"
         df["p"] = .9
 
@@ -86,7 +87,7 @@ class Fax_Sampler():
             df["k"] = 0
         
         # repeat the prompts n_completions times
-        df = df.loc[df.index.repeat(n_completions)].reset_index(drop=True)
+        # df = df.loc[df.index.repeat(n_completions)].reset_index(drop=True)
 
         # convert to list of dicts
         queries = df.to_dict('records')
@@ -98,14 +99,14 @@ class Fax_Sampler():
         # print (len(samples))
         # print (samples[0])
 
-        df['completion'] = samples
+        # df['completion'] = samples
 
         # for i, row in df.iterrows():
         #     # print (row.prompt)
         #     print (row.completion)
         #     print ('-----------------')
         # fadsf
-        return df
+        return samples #df
 
 
 
