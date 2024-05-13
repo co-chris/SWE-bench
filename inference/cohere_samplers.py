@@ -45,12 +45,13 @@ class Fax_Sampler():
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(None)) as sess:
             responses = await self.raw_sample_request(sess, queries)
             try:
-                print (responses[0].keys())
+                # print (responses[0].keys())
                 completions = [resp['completions'][0] for resp in responses]
+                finish_reasons = [resp['finish_reasons'][0] for resp in responses]
             except Exception as e:
                 print (responses)
                 raise e
-            return completions
+            return completions, finish_reasons
 
     def sample(self, prompt_list, temp):
         """
@@ -65,10 +66,11 @@ class Fax_Sampler():
 
         # make max tokens be 2000
         n_tokens = [40000 - int(length) for length in prompt_lengths]
-        n_tokens = [min(4000, n) for n in n_tokens]
+        max_tokens_to_gen = 4000
+        n_tokens = [min(max_tokens_to_gen, n) for n in n_tokens]
         # print (n_tokens)
         for nt in n_tokens:
-            if nt < 4000:
+            if nt < max_tokens_to_gen:
                 print (f"Warning: n_tokens is less than 4000: {nt}")
 
         # Prepare the dataframe
@@ -95,7 +97,7 @@ class Fax_Sampler():
         #     print (query['prompt'])
 
         # generate completions
-        samples = asyncio.run(self.run_generation(queries))
+        samples, finish_reasons = asyncio.run(self.run_generation(queries))
         # print (len(samples))
         # print (samples[0])
 
@@ -106,7 +108,7 @@ class Fax_Sampler():
         #     print (row.completion)
         #     print ('-----------------')
         # fadsf
-        return samples #df
+        return samples, finish_reasons #df
 
 
 

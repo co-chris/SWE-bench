@@ -253,8 +253,8 @@ def generate_completions(prompt, model, n_completions):
         finish_reasons = [response['finish_reason'] for response in responses]
 
     else:
-        sampler = Fax_Sampler(model_path)
-        completions = sampler.sample(batch, temp=1)
+        sampler = Fax_Sampler(model)
+        completions, finish_reasons = sampler.sample(batch, temp=1)
 
 
 
@@ -303,15 +303,15 @@ if __name__ == "__main__":
     """
 
     date = datetime.datetime.now().strftime("%Y_%m_%d")
-    
+    generations_dir = "/home/chris_cohere_ai/SWE-bench-stuff/generated_completions"
     
     # run_name = f"command-r-plus-{date}-test-set"
     # model = "command-r-plus"
-    # prev_outputs_dir = "/home/chris_cohere_ai/SWE-bench-stuff/generated_completions/command-r-plus-2024_05_12-test-set"
+    # prev_outputs_dir = os.path.join(generations_dir, "command-r-plus-2024_05_12-test-set")
 
     run_name = f"35B_finetune-{date}-test-set"
     model = "100.96.123.96:8000"
-    prev_outputs_dir = ""
+    prev_outputs_dir = os.path.join(generations_dir, "35B_finetune-2024_05_12-test-set")
 
 
 
@@ -320,7 +320,6 @@ if __name__ == "__main__":
     if prev_outputs_dir:
         run_dir = prev_outputs_dir
     else:
-        generations_dir = "/home/chris_cohere_ai/SWE-bench-stuff/generated_completions"
         run_dir = os.path.join(generations_dir, run_name)
         os.makedirs(run_dir, exist_ok=True)
 
