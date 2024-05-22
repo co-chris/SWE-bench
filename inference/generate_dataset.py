@@ -305,13 +305,13 @@ if __name__ == "__main__":
     date = datetime.datetime.now().strftime("%Y_%m_%d")
     generations_dir = "/home/chris_cohere_ai/SWE-bench-stuff/generated_completions"
     
-    # run_name = f"command-r-plus-{date}-test-set"
-    # model = "command-r-plus"
-    # prev_outputs_dir = os.path.join(generations_dir, "command-r-plus-2024_05_12-test-set")
+    run_name = f"command-r-plus-{date}-test-set"
+    model = "command-r-plus"
+    prev_outputs_dir = os.path.join(generations_dir, "command-r-plus-2024_05_12-test-set")
 
-    run_name = f"35B_finetune-{date}-test-set"
-    model = "100.96.123.96:8000"
-    prev_outputs_dir = os.path.join(generations_dir, "35B_finetune-2024_05_12-test-set")
+    # run_name = f"35B_finetune-{date}-test-set"
+    # model = "100.96.123.96:8000"
+    # prev_outputs_dir = os.path.join(generations_dir, "35B_finetune-2024_05_12-test-set")
 
 
 
