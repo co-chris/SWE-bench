@@ -9,6 +9,7 @@ import logging
 import os
 import shutil
 import subprocess
+import datetime
 
 from datasets import load_dataset
 from multiprocessing import Pool
@@ -34,6 +35,7 @@ logger = logging.getLogger("run_evaluation")
 
 
 def main(
+    run_name: str,
     predictions_path: str,
     swe_bench_tasks: str,
     log_dir: str,
@@ -66,21 +68,27 @@ def main(
     if not os.path.exists(testbed) or not os.path.isdir(testbed):
         raise ValueError("--testbed must exist and point at a directory")
 
-    tasks = list(get_eval_refs(swe_bench_tasks).values())
-    log_suffix = log_suffix if log_suffix is not None else ""
+    
+    
 
     # print (len(tasks))
     # fasdf
 
-    # model_name = predictions_path.split("/")[-1].split("__")[0]
-    run_name = predictions_path.split("/")[-1].split("__")[0].split('.')[0]
-    model_log_dir = os.path.join(log_dir, run_name+log_suffix)
+    date = datetime.datetime.now().strftime("%Y_%m_%d")
     
-    print (blue(run_name))
+    run_name = f"{run_name}" #-{date}"
 
-    allow_overwrite = True
+    # model_name = predictions_path.split("/")[-1].split("__")[0]
+    # run_name = predictions_path.split("/")[-1].split("__")[0].split('.')[0]
+    # log_suffix = log_suffix if log_suffix is not None else ""
+    model_log_dir = os.path.join(log_dir, run_name) #+log_suffix)
+    
+    print (blue(run_name))    
     print (f"Log dir: {blue(model_log_dir)}")
+
+
     # if it exists, stop
+    allow_overwrite = True
     if os.path.exists(model_log_dir) and not allow_overwrite:
         logger.info(f"Log directory {model_log_dir} already exists")
         return
@@ -91,20 +99,50 @@ def main(
         
 
     print ('Loading predictions')
-    predictions = get_instances(predictions_path)
-    
-    # If test set
-    if 'train_set_patches' not in run_name:
-        # Only keep instances that gold patch solves AND are less than 40k tokens, 818 of them
-        test_instances_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc_750.json"
-        test_instances = json.load(open(test_instances_path))
-        predictions_todo = []
-        for p in predictions:
-            if p["instance_id"] in test_instances:
-                predictions_todo.append(p)
-        predictions = predictions_todo
-        print (f"Filtered to {blue(len(predictions))}: solved by gold and less than max_length tokens")
+    # predictions = get_instances(predictions_path)
+    # list all files in predictions_path
+    predictions = []
+    print (len(os.listdir(predictions_path)))
+    # fads
+    for json_file in os.listdir(predictions_path):
+        # print (file)
+        # load json
+        json_data = json.load(open(os.path.join(predictions_path, json_file)))
+        # print (len(json_data))
+        # print (json_data.keys())    
+        # print (len(json_data['completions']))
+        # print (json_data['instance_id'])
+        # # print (j)
+        # fasdfa
+
+        for j in range(len(json_data['completions'])):
+            new_instance_id = json_data['instance_id'] + f"_{j}"
+            # copy all keys to new instance, except completions and finish_reasons
+            new_instance = {k: v for k, v in json_data.items() if k not in ['completions', 'finish_reasons']}
+            new_instance['full_output'] = json_data['completions'][j]
+            new_instance['instance_id'] = new_instance_id
+            new_instance['model_name_or_path'] = run_name
+            predictions.append(new_instance)
+
     n_all_preds = len(predictions)
+    print (f"Loaded {blue(n_all_preds)} predictions")
+    
+
+    # fadsfa
+
+
+    # # If test set
+    # if 'train_set_patches' not in run_name:
+    #     # Only keep instances that gold patch solves AND are less than 40k tokens, 818 of them
+    #     test_instances_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc_750.json"
+    #     test_instances = json.load(open(test_instances_path))
+    #     predictions_todo = []
+    #     for p in predictions:
+    #         if p["instance_id"] in test_instances:
+    #             predictions_todo.append(p)
+    #     predictions = predictions_todo
+    #     print (f"Filtered to {blue(len(predictions))}: solved by gold and less than max_length tokens")
+    # n_all_preds = len(predictions)
 
     # add log file
     for p in predictions:
@@ -117,13 +155,16 @@ def main(
         predictions_todo = []
         for p in predictions:
             # log_file = os.path.join(model_log_dir, f"{p[KEY_INSTANCE_ID]}.{p[KEY_MODEL]}.log")
+            log_file = p["log_file"]
             if not os.path.exists(log_file):
                 # add log_file to p
                 # p["log_file"] = log_file
                 predictions_todo.append(p)
         predictions = predictions_todo
     
-
+    print (len(predictions))
+    # fasdasfd
+    print ()
 
 
     # fdsasfd
@@ -135,10 +176,16 @@ def main(
     # For each model, split predictions by repo + save to folder
     # for model, predictions in map_model_to_predictions.items():
     # Group predictions by repository, version in order to install dependencies
-    tasks_map = {t[KEY_INSTANCE_ID]: t for t in tasks}
+    tasks = list(get_eval_refs(swe_bench_tasks).values())
+    tasks_map = {t['instance_id']: t for t in tasks}
     map_repo_version_to_predictions = {}
     for p in predictions:
-        instance_id = p[KEY_INSTANCE_ID]
+        instance_id = p['instance_id']
+        # remove the number at the end
+        instance_id = instance_id.rsplit("_", 1)[0]
+        # print (instance_id)
+        # fsdaf
+
         repo = instance_id.rsplit("-", 1)[0]
         if repo not in map_repo_version_to_predictions:
             map_repo_version_to_predictions[repo] = {}
@@ -148,6 +195,7 @@ def main(
         if version not in map_repo_version_to_predictions[repo]:
             map_repo_version_to_predictions[repo][version] = []
         map_repo_version_to_predictions[repo][version].append(p)
+    
 
     print ("########################################")
     print (f"Run name: {blue(run_name)}")
@@ -242,10 +290,10 @@ def main(
     print ("########################################")
 
 
-    # print all repos
-    for repo in map_repo_version_to_predictions:
-        print (repo)
-    fsd
+    # # print all repos
+    # for repo in map_repo_version_to_predictions:
+    #     print (repo)
+
 
 
 
@@ -261,7 +309,7 @@ def main(
     for eval_arg in eval_args:
         setup_testbed(eval_arg)
 
-    fadsfsd
+
     try:
         # if num_processes == 1:
         #     for args in eval_args:
@@ -290,6 +338,7 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--run_name", type=str, required=True)
     parser.add_argument("--predictions_path", type=str, help="Path to predictions file (must be .json)", required=True)
     # parser.add_argument("--log_dir", type=str, help="Path to log directory", required=True)
     # parser.add_argument("--swe_bench_tasks", type=str, help="Path to dataset file or HF datasets name", required=True)
@@ -304,7 +353,7 @@ if __name__ == "__main__":
 
     # add value called testbed to args
     args.swe_bench_tasks = "princeton-nlp/SWE-bench_oracle"
-    args.log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir"
+    args.log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/multi_gen"
     args.testbed = "/home/chris_cohere_ai/SWE-bench-stuff/testbed"
 
     logger.propagate = args.verbose

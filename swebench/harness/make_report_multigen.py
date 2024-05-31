@@ -1,5 +1,5 @@
 """
-python -m swebench.harness.make_report
+python -m swebench.harness.make_report_multigen
 
 run eval: python -m swebench.harness.run_evaluation --predictions_path /home/chris_cohere_ai/SWE-bench-stuff/swe-bench-example-preds.json --swe_bench_tasks princeton-nlp/SWE-bench --log_dir /home/chris_cohere_ai/SWE-bench-stuff/log_dir --testbed /home/chris_cohere_ai/SWE-bench-stuff/testbed
 """
@@ -102,7 +102,7 @@ def get_model_report2(predictions_path, log_dir):
 
 
 
-    do_this_filter = 1
+    do_this_filter = 0
     if do_this_filter:
         # Only keep instances that gold patch solves AND are less than 40k tokens, 818 of them
         test_instances_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc_750.json"
@@ -168,7 +168,7 @@ def get_model_report2(predictions_path, log_dir):
         # print (log_path)
         # fasdf
         if not os.path.exists(log_path):
-            print (f"#########Log file {log_path} does not exist###########")
+            # print (f"#########Log file {log_path} does not exist###########")
             continue
         report_map["with_logs"].append(instance_id)
 
@@ -218,8 +218,8 @@ def get_model_report2(predictions_path, log_dir):
         # print (blue(tests_statuses))
         # fasdf
 
-        # # remove the number at the end, for multi gen
-        # new_instance_id = instance_id.rsplit("_", 1)[0]
+        # remove the number at the end, for multi gen
+        new_instance_id = instance_id.rsplit("_", 1)[0]
 
         expected_statuses = eval_refs[new_instance_id]
         # print ('expected_statuses')
@@ -264,6 +264,8 @@ def get_model_report2(predictions_path, log_dir):
             # print (report["FAIL_TO_PASS"]["failure"])
         #     fads
 
+    # print (report_map)
+    # fads
     return report_map
 
 
@@ -316,6 +318,10 @@ if __name__ == "__main__":
     # parser.add_argument("--log_suffix", type=str, help="(Optional) Suffix to append to log file names", default=None)
     args = parser.parse_args()
 
+    log_dir_contents = os.listdir(args.log_dir)
+    print (f"Number of log files: {len(log_dir_contents)}")
+    # fasdf
+
     # log_dir = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/provided_patch_2024_05_09"
 
     # report = get_model_report2(args.model, args.predictions_path, args.swe_bench_tasks, args.log_dir, args.log_suffix)
@@ -348,11 +354,37 @@ if __name__ == "__main__":
         all_instances.extend(instances)
     all_instances = set(all_instances)
     # go through the hierchy in reverse order and add to dict if it exists
+    instance_and_status = {}
     for instance in all_instances:
         for status in keys[::-1]:
             if instance in report[status]:
                 hierchy_dict[status].append(instance)
+
+                # remove the number at the end, for multi gen
+                new_instance_id = instance.rsplit("_", 1)[0]
+                if new_instance_id in instance_and_status:
+                    instance_and_status[new_instance_id].append(status)
+                else:
+                    instance_and_status[new_instance_id] = [status]
+                # print (instance, status)
+                # fasd
                 break
+
+    print ()
+
+    count = 0
+    for instance_id, status in instance_and_status.items():
+        patch_apply_fail_count = status.count('APPLY_PATCH_FAIL')
+        test_fail_count = status.count('applied')
+        resolved_count = status.count('resolved')
+        if patch_apply_fail_count < 10:
+            count +=1
+
+        print (f"{instance_id}: {patch_apply_fail_count} {test_fail_count} {resolved_count}")
+
+    print (count, len(all_instances), count/len(all_instances))
+    print ()
+
     # print the instances in order
     for status in keys:
         if len(hierchy_dict[status]) == 0:
@@ -360,6 +392,10 @@ if __name__ == "__main__":
         print (f"{status}: {len(hierchy_dict[status])} instances")
         # for instance in hierchy_dict[status]:
         #     print (f"\t{instance}")
+    print ()
+    
+    total_instances = len(all_instances)
+    print (f"Total instances: {total_instances}")
 
 print ()
 

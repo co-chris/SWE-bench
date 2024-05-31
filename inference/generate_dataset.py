@@ -386,7 +386,9 @@ if __name__ == "__main__":
     #####################################################################
     print ()
     print ()
-    print (train_set[0].keys())
+    # print (train_set[0].keys())
+
+
     # Get counts for each repo
     repo_counts = {}
     for instance in train_set:
@@ -400,6 +402,8 @@ if __name__ == "__main__":
     for repo, count in repo_counts.items():
         print (f"{repo}: {count}")
     print ()
+
+    fasdfa
 
     # for instance in train_set:
     #     if 'pandas' in instance['repo']:
@@ -475,94 +479,94 @@ if __name__ == "__main__":
 
 
 
-    fadsfa
+    # fadsfa
 
 
-    # dataset_name_or_path = "/home/chris_cohere_ai/SWE-bench-stuff/tasks/test_set/swe-bench.json"
-    # dataset_name_or_path = "/home/chris_cohere_ai/.cache/huggingface/datasets/princeton-nlp___swe-bench/"
-    # dataset_name_or_path = "princeton-nlp/SWE-bench"
+    # # dataset_name_or_path = "/home/chris_cohere_ai/SWE-bench-stuff/tasks/test_set/swe-bench.json"
+    # # dataset_name_or_path = "/home/chris_cohere_ai/.cache/huggingface/datasets/princeton-nlp___swe-bench/"
+    # # dataset_name_or_path = "princeton-nlp/SWE-bench"
 
-    # model_name = "command-r"
-    # model_name = "command-r-plus"
-     #-round2"
-    # model_name_suffix = "_round2"
-    # model_name_suffix = "_agent2"
+    # # model_name = "command-r"
+    # # model_name = "command-r-plus"
+    #  #-round2"
+    # # model_name_suffix = "_round2"
+    # # model_name_suffix = "_agent2"
 
 
-    # past_output = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r-plus__SWE-bench_oracle__test.jsonl"
-    # past_logs = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus"
+    # # past_output = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r-plus__SWE-bench_oracle__test.jsonl"
+    # # past_logs = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus"
     
 
-    # model_name = "command-r-plus"
-    # model_name_suffix = "_agent3"
-    # past_output = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r-plus_agent2__SWE-bench_oracle__test.jsonl"
-    # past_logs = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus_agent2"
+    # # model_name = "command-r-plus"
+    # # model_name_suffix = "_agent3"
+    # # past_output = "/home/chris_cohere_ai/SWE-bench-stuff/outputs/command-r-plus_agent2__SWE-bench_oracle__test.jsonl"
+    # # past_logs = "/home/chris_cohere_ai/SWE-bench-stuff/log_dir/command-r-plus_agent2"
 
 
-    # model_name = "finetuned_35B"
+    # # model_name = "finetuned_35B"
+    # # model_path = "100.96.123.96:8000"
+    # # model_name_suffix = ""
+    # # past_output = ""
+    # # past_logs = ""
+    # # max_length = 40000
+    # # overwrite = True
+
+
+    # # model_name = "test"
+    # # model_path = "100.96.123.96:8000"
+    # # model_name_suffix = ""
+    # # past_output = ""
+    # # past_logs = ""
+    # # max_length = 40000
+    # # overwrite = True
+
+
+
+
+    # # run_name = f"command-r-plus_{date}"
+    # # model_path = "command-r-plus"
+    # # past_output = ""
+    # # past_logs = ""
+    # # max_length = 40000
+    # # overwrite = False
+
+
+    # # run_name = f"command-r_{date}"
+    # # model_path = "command-r"
+    # # past_output = ""
+    # # past_logs = ""
+    # # max_length = 34000
+    # # overwrite = False
+
+
+
+    # # run_name = f"test"
+    # # model_path = "command-r"
+    # # past_output = ""
+    # # past_logs = ""
+    # # max_length = 33300
+    # # overwrite = True
+
+
+    # run_name = "finetuned_35B"
     # model_path = "100.96.123.96:8000"
-    # model_name_suffix = ""
-    # past_output = ""
-    # past_logs = ""
-    # max_length = 40000
-    # overwrite = True
-
-
-    # model_name = "test"
-    # model_path = "100.96.123.96:8000"
-    # model_name_suffix = ""
-    # past_output = ""
-    # past_logs = ""
-    # max_length = 40000
-    # overwrite = True
-
-
-
-
-    # run_name = f"command-r-plus_{date}"
-    # model_path = "command-r-plus"
-    # past_output = ""
-    # past_logs = ""
-    # max_length = 40000
-    # overwrite = False
-
-
-    # run_name = f"command-r_{date}"
-    # model_path = "command-r"
-    # past_output = ""
-    # past_logs = ""
-    # max_length = 34000
-    # overwrite = False
-
-
-
-    # run_name = f"test"
-    # model_path = "command-r"
     # past_output = ""
     # past_logs = ""
     # max_length = 33300
-    # overwrite = True
-
-
-    run_name = "finetuned_35B"
-    model_path = "100.96.123.96:8000"
-    past_output = ""
-    past_logs = ""
-    max_length = 33300
-    overwrite = False
+    # overwrite = False
 
 
 
-    # dataset_name_or_path = "princeton-nlp/SWE-bench_oracle"
-    output_dir = "/home/chris_cohere_ai/SWE-bench-stuff/outputs"
+    # # dataset_name_or_path = "princeton-nlp/SWE-bench_oracle"
+    # output_dir = "/home/chris_cohere_ai/SWE-bench-stuff/outputs"
 
-    # main(   run_name,
-    #         model_path,
-    #         max_length,
-    #         output_dir,
-    #         past_output,
-    #         past_logs,
-    #         overwrite)
+    # # main(   run_name,
+    # #         model_path,
+    # #         max_length,
+    # #         output_dir,
+    # #         past_output,
+    # #         past_logs,
+    # #         overwrite)
 
 
 
@@ -570,102 +574,102 @@ if __name__ == "__main__":
 
 
 
-    # if shard_id is None and num_shards is not None:
-    #     logger.warning(
-    #         f"Received num_shards={num_shards} but shard_id is None, ignoring"
-    #     )
-    # if shard_id is not None and num_shards is None:
-    #     logger.warning(f"Received shard_id={shard_id} but num_shards is None, ignoring")
-    # model_args = parse_model_args(model_args)
+    # # if shard_id is None and num_shards is not None:
+    # #     logger.warning(
+    # #         f"Received num_shards={num_shards} but shard_id is None, ignoring"
+    # #     )
+    # # if shard_id is not None and num_shards is None:
+    # #     logger.warning(f"Received shard_id={shard_id} but num_shards is None, ignoring")
+    # # model_args = parse_model_args(model_args)
     
-    # if "checkpoint" in Path(model_name_or_path).name:
-    #     model_nickname = Path(model_name_or_path).parent.name
-    # else:
-    #     model_nickname = Path(model_name_or_path).name
+    # # if "checkpoint" in Path(model_name_or_path).name:
+    # #     model_nickname = Path(model_name_or_path).parent.name
+    # # else:
+    # #     model_nickname = Path(model_name_or_path).name
 
-    # print ('\n HEHEHEHEHEHEHEH \n')
+    # # print ('\n HEHEHEHEHEHEHEH \n')
 
-    split = 'test'
-    dataset_name = 'SWE-bench_oracle'
+    # split = 'test'
+    # dataset_name = 'SWE-bench_oracle'
 
-    # model_nickname = model_name + model_name_suffix
-    output_file = f"{run_name}__{dataset_name.split('/')[-1]}__{split}"
-    output_file = Path(output_dir, output_file + ".jsonl")
-    print(f"\nWill write to\n {blue(output_file)}\n")
+    # # model_nickname = model_name + model_name_suffix
+    # output_file = f"{run_name}__{dataset_name.split('/')[-1]}__{split}"
+    # output_file = Path(output_dir, output_file + ".jsonl")
+    # print(f"\nWill write to\n {blue(output_file)}\n")
 
-    # show_outputs = 0
-    # if show_outputs:
-    #     show_some_outputs(output_file)
-    #     quit()
+    # # show_outputs = 0
+    # # if show_outputs:
+    # #     show_some_outputs(output_file)
+    # #     quit()
 
-    # if it exists, remove file
-    if overwrite and output_file.exists():
-        output_file.unlink()
-        print(f"Removed existing file {output_file}")
+    # # if it exists, remove file
+    # if overwrite and output_file.exists():
+    #     output_file.unlink()
+    #     print(f"Removed existing file {output_file}")
+
+
+    # # # Load dataset
+    # # if Path(dataset_name_or_path).exists():
+    # #     dataset = load_from_disk(dataset_name_or_path)
+    # # else:
+    # #     print ('\n loading dataset')
+    # #     dataset = load_dataset(dataset_name_or_path)
+    # # print ('dataset loaded \n')
+    # # dataset = dataset[split]
+
 
 
     # # Load dataset
-    # if Path(dataset_name_or_path).exists():
-    #     dataset = load_from_disk(dataset_name_or_path)
-    # else:
-    #     print ('\n loading dataset')
-    #     dataset = load_dataset(dataset_name_or_path)
-    # print ('dataset loaded \n')
-    # dataset = dataset[split]
+    # arrow_path = "/home/chris_cohere_ai/.cache/huggingface/datasets/princeton-nlp___swe-bench_oracle/default/0.0.0/b1f5f0b261409a0df9ac19f10bd07b88a8d9d4a2/swe-bench_oracle-test.arrow"
+    # # arrow_path2 = "/home/chris_cohere_ai/.cache/huggingface/datasets/princeton-nlp___swe-bench_oracle/default/0.0.0/d335ae214fcf59e2f6530e5ea1f2ad67bb0c30ee/swe-bench_oracle-test.arrow"
+    # # load dataset
+    # dataset = load_dataset("arrow", data_files=arrow_path)["train"] #its actually test set.
+    # # print (dataset.column_names)
+    # # print (len(dataset))
+    # total_instances = len(dataset)
+    # print (f"Number of instances: {total_instances}")
+    # # convert to df
+    # # df = pd.DataFrame(dataset)
+    # # print
 
 
 
-    # Load dataset
-    arrow_path = "/home/chris_cohere_ai/.cache/huggingface/datasets/princeton-nlp___swe-bench_oracle/default/0.0.0/b1f5f0b261409a0df9ac19f10bd07b88a8d9d4a2/swe-bench_oracle-test.arrow"
-    # arrow_path2 = "/home/chris_cohere_ai/.cache/huggingface/datasets/princeton-nlp___swe-bench_oracle/default/0.0.0/d335ae214fcf59e2f6530e5ea1f2ad67bb0c30ee/swe-bench_oracle-test.arrow"
-    # load dataset
-    dataset = load_dataset("arrow", data_files=arrow_path)["train"] #its actually test set.
+
+    # # 
+    # # Sort by length
+    # lens = np.array(list(map(len, dataset["text"])))
+    # dataset = dataset.select(np.argsort(lens))
+
     # print (dataset.column_names)
-    # print (len(dataset))
-    total_instances = len(dataset)
-    print (f"Number of instances: {total_instances}")
-    # convert to df
-    # df = pd.DataFrame(dataset)
-    # print
-
-
-
-
-    # 
-    # Sort by length
-    lens = np.array(list(map(len, dataset["text"])))
-    dataset = dataset.select(np.argsort(lens))
-
-    print (dataset.column_names)
-    print ()
+    # print ()
     
 
-    datapoints = filter_examples(dataset, output_file, max_length, past_output, past_logs)
-    fasd
+    # datapoints = filter_examples(dataset, output_file, max_length, past_output, past_logs)
+    # fasd
 
 
-    # # SAVE INSTANCE IDS
-    # instance_ids = [datum["instance_id"] for datum in datapoints]
-    # print (instance_ids[:5])
-    # instance_ids_output_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc_750.json"
-    # # make dir if doesnt exist
-    # os.makedirs(os.path.dirname(instance_ids_output_path), exist_ok=True)
-    # with open(instance_ids_output_path, "w") as f:
-    #     json.dump(instance_ids, f)
-    # print (f"Saved to {instance_ids_output_path}")
-    # fdsafs
+    # # # SAVE INSTANCE IDS
+    # # instance_ids = [datum["instance_id"] for datum in datapoints]
+    # # print (instance_ids[:5])
+    # # instance_ids_output_path = "/home/chris_cohere_ai/SWE-bench-stuff/instance_ids/test_lite_cc_750.json"
+    # # # make dir if doesnt exist
+    # # os.makedirs(os.path.dirname(instance_ids_output_path), exist_ok=True)
+    # # with open(instance_ids_output_path, "w") as f:
+    # #     json.dump(instance_ids, f)
+    # # print (f"Saved to {instance_ids_output_path}")
+    # # fdsafs
 
-    cohere_inference(
-            datapoints=datapoints,
-            model_path=model_path,
-            output_file=output_file,
-    )
+    # cohere_inference(
+    #         datapoints=datapoints,
+    #         model_path=model_path,
+    #         output_file=output_file,
+    # )
 
-    # if model_name_or_path.startswith("claude"):
-    #     anthropic_inference(**inference_args)
-    # elif model_name_or_path.startswith("gpt"):
-    #     openai_inference(**inference_args)
-    # else:
-    #     raise ValueError(f"Invalid model name or path {model_name_or_path}")
-    print(f"Done!")
+    # # if model_name_or_path.startswith("claude"):
+    # #     anthropic_inference(**inference_args)
+    # # elif model_name_or_path.startswith("gpt"):
+    # #     openai_inference(**inference_args)
+    # # else:
+    # #     raise ValueError(f"Invalid model name or path {model_name_or_path}")
+    # print(f"Done!")
 
